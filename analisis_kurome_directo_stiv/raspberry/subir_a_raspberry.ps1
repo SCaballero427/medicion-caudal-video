@@ -29,10 +29,10 @@ function Paso($texto) { Write-Host "`n== $texto" -ForegroundColor Cyan }
 function Comprobar($que) {
     if ($LASTEXITCODE -ne 0) { throw "fallo: $que (codigo $LASTEXITCODE)" }
 }
-function Ssh([string]$orden, [switch]$Tty) {
+function EnPi([string]$orden, [switch]$Tty) {
     $a = @('-p', $Puerto) + $OpcionesSsh
     if ($Tty) { $a += '-t' }
-    & ssh @a $destino $orden
+    & ssh.exe @a $destino $orden
 }
 
 # -- 1. paquete ------------------------------------------------------------------------------------
@@ -72,32 +72,32 @@ try {
         $llave = Join-Path $env:USERPROFILE ".ssh\id_ed25519"
         if (-not (Test-Path "$llave.pub")) {
             New-Item -ItemType Directory -Force (Split-Path $llave) | Out-Null
-            & ssh-keygen -t ed25519 -N '""' -f $llave -q
+            & ssh-keygen.exe -t ed25519 -N '""' -f $llave -q
             Comprobar "ssh-keygen"
         }
-        Get-Content "$llave.pub" | & ssh -p $Puerto @OpcionesSsh $destino "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+        Get-Content "$llave.pub" | & ssh.exe -p $Puerto @OpcionesSsh $destino "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
         Comprobar "copiar la llave a la Pi"
         Write-Host "llave copiada: a partir de ahora no pedira contrasena"
     }
 
     # -- 3. copiar --------------------------------------------------------------------------------
     Paso "Copiando a $destino`:~/stiv"
-    Ssh "mkdir -p ~/stiv"
+    EnPi "mkdir -p ~/stiv"
     Comprobar "conectar con la Pi (esta encendida? es correcto -Equipo?)"
     $a = @('-P', $Puerto) + $OpcionesSsh
-    & scp @a $paquete "${destino}:stiv/paquete.tgz"
+    & scp.exe @a $paquete "${destino}:stiv/paquete.tgz"
     Comprobar "copiar el paquete"
 
     # -- 4. instalar ------------------------------------------------------------------------------
     $extraer = "cd ~/stiv && tar -xzf paquete.tgz && rm paquete.tgz"
     if ($SinInstalar) {
         Paso "Codigo actualizado; reiniciando el servicio si estaba en marcha"
-        Ssh "$extraer && chmod +x raspberry/*.sh && if systemctl is-active --quiet stiv; then sudo systemctl restart stiv && echo reiniciado; else echo 'servicio parado: nada que reiniciar'; fi" -Tty
+        EnPi "$extraer && chmod +x raspberry/*.sh && if systemctl is-active --quiet stiv; then sudo systemctl restart stiv && echo reiniciado; else echo 'servicio parado: nada que reiniciar'; fi" -Tty
     } else {
         Paso "Instalando en la Pi (la primera vez tarda varios minutos; pedira la contrasena para sudo)"
         $opcion = ""
         if ($SobrescribirConfig) { $opcion = " --sobrescribir-config" }
-        Ssh "$extraer && bash raspberry/instalar.sh$opcion" -Tty
+        EnPi "$extraer && bash raspberry/instalar.sh$opcion" -Tty
     }
     Comprobar "instalar en la Pi"
     Paso "Hecho. Para entrar en la Pi:  ssh $destino   y luego   cd ~/stiv"

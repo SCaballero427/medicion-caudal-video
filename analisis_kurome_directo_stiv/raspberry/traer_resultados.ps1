@@ -22,7 +22,7 @@ $local = Join-Path $caso "salidas_raspberry"
 New-Item -ItemType Directory -Force $local | Out-Null
 
 $a = @('-P', $Puerto, '-r') + $OpcionesSsh
-& scp @a "$Usuario@${Equipo}:stiv/salidas/*" $local
+& scp.exe @a "$Usuario@${Equipo}:stiv/salidas/*" $local
 if ($LASTEXITCODE -ne 0) { throw "no se pudo copiar desde la Pi (codigo $LASTEXITCODE)" }
 
 Get-ChildItem $local -Recurse -File | Sort-Object FullName |
