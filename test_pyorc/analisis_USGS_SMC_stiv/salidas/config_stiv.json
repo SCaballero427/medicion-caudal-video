@@ -1,0 +1,23 @@
+{
+  "video": "entradas\\SMC_estabilizado_stiv.mkv",
+  "n_frames": 250,
+  "fps": 30.015,
+  "fila_agua_superior": 438,
+  "fila_agua_inferior": 1463,
+  "ancho_canal_m": 1.8288,
+  "ancho_canal_px": 1025,
+  "escala_m_px": 0.0017842,
+  "columna_inicio": 600,
+  "columna_fin": 3400,
+  "angulo_flujo_grados": -1.0,
+  "v_esperada_ms": 0.95,
+  "ds_px": 18,
+  "sigma_antialias_px": 9.0,
+  "lado_bloque": 64,
+  "coh_min_bloque": 0.5,
+  "coh_min_estacion": 0.7,
+  "sigma_derivada": 1.5,
+  "alfa": 0.92,
+  "caudal_m3s": 1.447501,
+  "area_m2": 1.80264
+}

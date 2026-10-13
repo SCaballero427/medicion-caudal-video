@@ -24,9 +24,32 @@ Doble clic en `arrancar.bat` (Myoshoji), o desde esta carpeta:
 .\.venv\Scripts\python.exe stiv_directo.py --camara kurome         # Kurome
 .\.venv\Scripts\python.exe stiv_directo.py --sin-ventana --duracion 120   # solo CSV, 2 min
 .\.venv\Scripts\python.exe stiv_directo.py --archivo clip.mp4      # mismo metodo sobre un video
+.\.venv\Scripts\python.exe stiv_directo.py --camara sitio1 --fuente rtsp://usuario:clave@IP:554/Streaming/Channels/101
 ```
 
 `arrancar.bat` pasa sus argumentos al script (`arrancar.bat --camara kurome`).
+
+- **`--camara <nombre nuevo>` + `--fuente <URL>`**: camara propia (p. ej. una Hikvision por RTSP).
+  Parte de un cuadrilatero generico que hay que arrastrar con `e`; su config (URL incluida) queda
+  en `salidas/<nombre>/config_stiv_directo.json` y desde ahi manda: las siguientes veces basta
+  `--camara <nombre>`. RTSP va por TCP, con 15 s de tiempo de espera y reconexion automatica.
+- `--paso-medida S` (segundos entre medidas, 1 por defecto) y `--vista-cada S` (sin ventana: guarda
+  `ultima_vista.png` cada S s) existen sobre todo para la Raspberry Pi.
+- Si YouTube responde "Sign in to confirm you're not a bot" (le paso a este PC el 2026-10-12),
+  `STIV_COOKIES=ruta\cookies.txt` le pasa a yt-dlp las cookies de un navegador con sesion.
+
+## Raspberry Pi
+
+`raspberry/` tiene todo para ejecutarlo en una **Raspberry Pi 4B** sin pantalla y que arranque solo
+al encenderse: `subir_a_raspberry.bat` (en el PC) lo copia e instala, `stiv.sh` lo maneja en la Pi,
+y trae un video de prueba de 20 s para probar sin camara ni internet. Instrucciones paso a paso, y
+lo que se probo y lo que no, en [raspberry/LEEME.md](raspberry/LEEME.md).
+
+`pruebas_docker/` es el banco de pruebas con el que se probo ese paquete sin hardware: una
+Raspberry Pi falsa (Debian 13 arm64 emulado, con systemd y SSH) y una camara RTSP simulada que emite
+el video de prueba. `probar_en_docker.bat` lo levanta, instala el paquete con el mismo
+`subir_a_raspberry.ps1` y ejecuta la prueba. Ver [pruebas_docker/LEEME.md](pruebas_docker/LEEME.md).
+Esta fuera de `raspberry/` a proposito: todo lo de `raspberry/` viaja a la Pi.
 
 La carpeta tiene su **propio entorno** `.venv` (numpy, opencv-python, yt-dlp; `requirements.txt`),
 porque `pyorc_env` de la raiz esta incompleto en este equipo (no tiene `Scripts\`). Si `.venv` no
@@ -117,13 +140,17 @@ con el tamano de un bloque, en metros.
   el agua y estructura gruesa casi estacionaria (ondas fijas), y suavizar da peso a la segunda.
 - `V_MAX_FISICA = 3 x v_esperada`, como en los otros casos STIV.
 - **La medida corre en un hilo aparte.** Cuesta ~140 ms; el directo entrega un fotograma cada
-  33 ms. Medido: 4-9 ms por fotograma en el hilo principal (lectura + muestreo), ~12 ms mas el
-  dibujo. Si el proceso se retrasa mas de 2 s respecto al flujo, se dibuja 1 de cada 3 fotogramas,
-  pero todos entran al STI.
+  33 ms. Medido: 1-2 ms por fotograma en el hilo principal (lectura + muestreo; eran 4-9 ms hasta
+  que el gris y el suavizado pasaron a hacerse solo sobre el recuadro que tocan las lineas, con
+  resultado identico bit a bit), ~12 ms mas el dibujo. Si el proceso se retrasa mas de 2 s
+  respecto al flujo, se dibuja 1 de cada 3 fotogramas, pero todos entran al STI. La cola de
+  fotogramas leidos y sin procesar admite 150 (~415 MB): con 600 la memoria llego a 1.3 GB.
 - El directo llega a rafagas (al arrancar entrega varios segundos de golpe): se reproduce a ritmo
-  real segun el PTS. Un hueco de PTS se rellena repitiendo la ultima fila; uno de mas de 1 s
-  reinicia el buffer. Si el flujo se corta, se vuelve a resolver la URL (las de HLS caducan) y se
-  reconecta.
+  real segun el PTS. Un hueco de PTS se rellena repitiendo la ultima fila. Un salto de mas de 1 s,
+  un PTS que retrocede (camara o emisor reiniciado: el tiempo vuelve a 0) o una reconexion vacian
+  el STI y **re-anclan el reloj** para que t siga creciendo; sin re-anclar, tras una reconexion no
+  se media hasta que el t nuevo superaba al de antes del corte (hallado cortando un RTSP de
+  prueba). Si el flujo se corta, se vuelve a resolver la URL (las de HLS caducan) y se reconecta.
 
 ## Resultados de las pruebas (2026-10-09)
 

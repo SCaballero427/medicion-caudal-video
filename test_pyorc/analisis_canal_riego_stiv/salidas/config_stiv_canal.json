@@ -1,0 +1,58 @@
+{
+  "video": "C:\\Users\\Sergio\\Desktop\\videos\\WhatsApp Video 2026-08-16 at 8.07.12 PM.mp4",
+  "focal": 780.0,
+  "orilla_izq": [
+    -1.0745460764048955,
+    461.9045756688032
+  ],
+  "orilla_der": [
+    0.9874296822077576,
+    571.3901275292312
+  ],
+  "punto_fuga": [
+    518.960178618182,
+    -53.09740010430217
+  ],
+  "inclinacion_deg": 23.619968511367667,
+  "ancho_canal": 2.250516992669585,
+  "ancho_variacion": 1.9732764129155929e-16,
+  "retranqueo": 0.1,
+  "tophat_k": 5,
+  "sigma_previo": 0.8,
+  "v_esperada": 0.056,
+  "Y_min": 1.4,
+  "Y_max": 3.2,
+  "n_estaciones": 15,
+  "banda": 0.1,
+  "n_lineas": 11,
+  "lado_bloque": 64,
+  "solape": 0.5,
+  "sigma_tensor": 1.2,
+  "cuantil_senal": 0.85,
+  "coh_min": 0.6,
+  "densidad_min": 0.004,
+  "densidad_max": 0.05,
+  "umbral_particula": 4.0,
+  "v_max_fisica": 0.168,
+  "unidades": "alturas de camara por segundo",
+  "info": {
+    "n_frames": 2429,
+    "fps": 29.97531879884821,
+    "DS": 0.0018682036503362151,
+    "n_muestras": 963,
+    "deriva_mediana": 6.698383808135986,
+    "deriva_max": 10.083252906799316,
+    "segundos": 69.39860343933105
+  },
+  "resumen": {
+    "n_aceptadas": 6,
+    "n_estaciones": 15,
+    "v_mediana": 0.05897766160964966,
+    "v_q05": 0.03171195995807648,
+    "v_q95": 0.06431292390823365,
+    "v_max": 0.06460035037994385,
+    "v_min": 0.027910114765167235,
+    "v_mediana_anchos": 0.02620627251504988,
+    "ancho_canal": 2.250516992669585
+  }
+}

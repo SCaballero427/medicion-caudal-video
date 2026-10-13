@@ -6,3 +6,10 @@ __pycache__/
 Thumbs.db
 desktop.ini
 ~$*
+
+# Llave SSH de prueba del banco Docker (la recrea probar_en_docker.ps1)
+.llave/
+
+# Videos sueltos y datasets externos: se quedan fuera del repositorio a proposito
+/videos/
+/datasets vision velocimetria/

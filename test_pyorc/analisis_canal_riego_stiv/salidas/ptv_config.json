@@ -1,0 +1,17 @@
+{
+  "umbral_det": 6,
+  "area": [
+    2,
+    60
+  ],
+  "salto_max": 0.01,
+  "duracion_min": 6,
+  "residuo_max": 0.004,
+  "v_min": 0.005,
+  "n_frames": 2429,
+  "n_detecciones": 4524347,
+  "n_pistas": 660,
+  "n_buenas": 562,
+  "v_mediana_bandas": 0.04890547132813883,
+  "v_X_mediana": -0.0012423941041103614
+}

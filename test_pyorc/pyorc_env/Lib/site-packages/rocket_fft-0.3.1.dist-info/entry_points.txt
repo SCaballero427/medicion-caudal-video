@@ -1,0 +1,2 @@
+[numba_extensions]
+init = rocket_fft:_init_extension

@@ -1,0 +1,10 @@
+concepto,valor,unidad
+Caudal STIV (este notebook),1.4475012602169186,m3/s
+Caudal aforo FlowTracker,1.4362,m3/s
+Diferencia,0.7868862426485546,%
+Incertidumbre declarada del aforo,4.2,%
+Incertidumbre por la escala (5 px),0.4878048780487805,%
+Alfa usado,0.92,-
+Alfa implicito segun el ADV (verticales medidas),0.9245334628484371,-
+Verticales medidas por STIV,9.0,de 11
+Verticales rellenadas por interpolacion,2.0,de 11

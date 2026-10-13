@@ -21,7 +21,12 @@ param(
     # opciones extra para ssh/scp, p. ej. @('-i', 'C:\ruta\llave')
     [string[]]$OpcionesSsh = @()
 )
-$ErrorActionPreference = "Stop"
+# Los cmdlets paran ante cualquier error; los programas externos (docker, ssh, scp, tar) NO: en
+# PowerShell 5.1 con "Stop", todo lo que escriben en stderr (progreso, avisos como "Permanently
+# added...") se vuelve un error fatal en cuanto la salida esta redirigida. A ellos se los juzga por
+# su codigo de salida ($LASTEXITCODE), que se comprueba despues de cada llamada.
+$ErrorActionPreference = "Continue"
+$PSDefaultParameterValues = @{ "*:ErrorAction" = "Stop" }
 $caso = Split-Path $PSScriptRoot -Parent
 $destino = "$Usuario@$Equipo"
 
@@ -92,7 +97,7 @@ try {
     $extraer = "cd ~/stiv && tar -xzf paquete.tgz && rm paquete.tgz"
     if ($SinInstalar) {
         Paso "Codigo actualizado; reiniciando el servicio si estaba en marcha"
-        EnPi "$extraer && chmod +x raspberry/*.sh && if systemctl is-active --quiet stiv; then sudo systemctl restart stiv && echo reiniciado; else echo 'servicio parado: nada que reiniciar'; fi" -Tty
+        EnPi "$extraer && chmod +x raspberry/*.sh && if systemctl is-enabled --quiet stiv || systemctl is-active --quiet stiv; then sudo systemctl restart stiv && echo 'servicio reiniciado con el codigo nuevo'; else echo 'servicio no activado: nada que reiniciar'; fi" -Tty
     } else {
         Paso "Instalando en la Pi (la primera vez tarda varios minutos; pedira la contrasena para sudo)"
         $opcion = ""

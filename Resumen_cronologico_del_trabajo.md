@@ -34,6 +34,10 @@ van marcadas como *aprox.*
 | 16–21 ago | Canal de riego: caso base, árbitro PTV, experimento de alcance, filtro adaptado, modelo de sección completa |
 | 21 ago | Videos «STIV puro» y «sección completa» del canal |
 | 9 oct | Traslado del workspace a este equipo; informe de avances en Word; **STIV en tiempo real sobre cámaras en directo de Tokio** |
+| 12 oct | Paquete de instalación para **Raspberry Pi 4B**; soporte de cámaras propias por RTSP; YouTube bloquea este PC |
+| 12 oct | **Prueba en Docker**: Raspberry emulada (Debian 13 ARM64 con systemd y SSH) y cámara RTSP simulada; 4 fallos encontrados y corregidos |
+| 12 oct | Repositorio privado en GitHub con todo el workspace |
+| 13 oct | Prueba en Docker convertida en **banco de pruebas reutilizable** (`pruebas_docker/`): Pi falsa + servidor RTSP + cámara simulada, con un solo script |
 
 ---
 
@@ -161,7 +165,7 @@ Se procesó el video del canal con RIVeR como tercer método.
 
 ### 4.5 Medición de recursos
 
-`benchmark.py` registra tiempo, CPU y memoria por etapa en cada ejecución (ver la sección 13).
+`benchmark.py` registra tiempo, CPU y memoria por etapa en cada ejecución (ver la sección 14).
 
 ---
 
@@ -451,7 +455,126 @@ funciona en este equipo.
 
 ---
 
-## 12. Algoritmos probados, en resumen
+## 12. Fase 10 — Raspberry Pi, prueba en Docker y repositorio (12–13 oct)
+
+### 12.1 Paquete para Raspberry Pi 4B
+
+El objetivo es que el STIV en directo mida solo, sin pantalla, desde que la Raspberry se enciende,
+con una cámara propia. Todo está en `analisis_kurome_directo_stiv/raspberry/`, con una guía paso a
+paso en `LEEME.md` pensada para quien no ha usado nunca una Raspberry.
+
+| Pieza | Dónde se ejecuta | Qué hace |
+|---|---|---|
+| `subir_a_raspberry.bat` / `.ps1` | PC | Empaqueta el código y las configuraciones de cámara, los copia a la Pi por SSH y la instala o actualiza (`-SinInstalar`, `-ConfigurarLlave`, `-SobrescribirConfig`) |
+| `traer_resultados.bat` / `.ps1` | PC | Trae a `salidas_raspberry\` el CSV, la imagen anotada y las configuraciones |
+| `instalar.sh` | Pi | Instalación repetible: paquetes del sistema, entorno Python con OpenCV sin pantalla, servicio |
+| `stiv.sh` | Pi | Órdenes del día a día: `prueba`, `activar`, `estado`, `registro`, `medidas`, `salud`… |
+| `stiv.service` + `stiv.conf` | Pi | Servicio systemd que lo arranca al encender y lo relanza si se cae |
+| `prueba/myoshoji_20s.mp4` | Pi | 20 s de video para probar sin cámara ni internet (sirve para funcionamiento y velocidad, no para medir) |
+
+**Cambios en `stiv_directo.py`:**
+
+- `--fuente` admite cualquier URL, incluidas cámaras **Hikvision por RTSP** (sobre TCP, con 15 s de
+  espera y reconexión automática).
+- `--camara` acepta nombres nuevos; su configuración (URL incluida) vive en su JSON.
+- `--paso-medida` y `--vista-cada`, pensados para funcionar sin pantalla.
+- `STIV_COOKIES`, para cuando YouTube responde «confirma que no eres un bot» (le pasó a este PC
+  el 12 oct).
+- Gris y suavizado calculados solo sobre el recuadro que tocan las líneas: **6–8× más barato** y
+  resultado idéntico bit a bit (de 4–9 ms a 1–2 ms por fotograma).
+- Cola de fotogramas reducida de 600 a 150.
+
+### 12.2 Prueba en Docker: una Raspberry emulada
+
+Como todavía no hay Raspberry física ni cámara, el paquete se probó en una **Raspberry Pi falsa
+montada con Docker**. Primero se hizo a mano (12 oct). Después se dejó como un **banco de pruebas
+reutilizable** en `analisis_kurome_directo_stiv/pruebas_docker/` (13 oct), que cualquiera puede volver
+a levantar con un doble clic, con Docker Desktop abierto.
+
+**Archivos del banco de pruebas:**
+
+| Archivo | Qué es |
+|---|---|
+| `pi_falsa/Dockerfile` | La imagen de la Pi falsa: **Debian 13 (trixie) para ARM de 64 bits** con systemd como proceso principal, SSH, `sudo` y Python 3, y un usuario `stiv`, como en Raspberry Pi OS |
+| `docker-compose.yml` | Los tres contenedores del banco (grupo `stiv-pruebas`) y cómo se conectan |
+| `probar_en_docker.ps1` / `.bat` | Lo levanta todo, instala el paquete con el **mismo script que se usará con la Pi real** y ejecuta la prueba |
+| `.llave/` | Llave SSH solo para las pruebas, creada por el script, para no tocar la carpeta `.ssh` del usuario |
+| `LEEME.md` | Guía de uso y lista de lo que la Pi falsa no reproduce |
+
+**Contenedores que levanta:**
+
+| Contenedor | Qué simula | Acceso |
+|---|---|---|
+| `stiv-pi-falsa` | La Raspberry: Debian ARM64 emulado con QEMU, nombre de equipo `stiv-rio` | SSH en `localhost:2222` |
+| `stiv-rtsp-srv` | Servidor RTSP (mediamtx), el «enchufe» de una cámara IP | `rtsp://localhost:8554/camara` desde el PC; `rtsp://stiv-rtsp-srv:8554/camara` desde la Pi falsa |
+| `stiv-rtsp-pub` | La **cámara simulada**: ffmpeg emite en bucle el video de prueba de 20 s en H.264 por RTSP | `docker stop` / `docker start` simulan un corte de cámara |
+
+**Cómo se usa** (`probar_en_docker.bat` con opciones):
+
+| Opción | Efecto |
+|---|---|
+| sin opciones | Levanta los contenedores, espera a systemd, copia la llave, instala el paquete (~8 min emulado) y ejecuta `stiv.sh prueba` |
+| `-SinInstalar` | Solo sube el código nuevo y repite la prueba |
+| `-SoloLevantar` | Levanta los contenedores sin tocar nada más |
+| `-Parar` / `-Arrancar` | Desactiva o reactiva los contenedores **sin perder lo instalado** (lo recomendado al terminar) |
+| `-Bajar` (`-BorrarImagenes`) | Los borra; la Pi falsa pierde lo instalado (y además se liberan ~1 GB de imágenes) |
+
+**Decisiones de diseño:**
+
+- **Se usan los scripts reales.** `subir_a_raspberry.ps1` recibe `-Equipo localhost -Puerto 2222` y
+  sus opciones SSH, así que lo que se prueba es exactamente lo que se usará con la placa.
+- **systemd de verdad dentro del contenedor** (`privileged`, cgroups del anfitrión, `/run` en tmpfs).
+  Así se puede probar el servicio y el arranque automático: `docker restart stiv-pi-falsa` hace de
+  «apagar y encender».
+- **`sudo` no pide contraseña en la Pi falsa**, para que la prueba corra sin nadie delante. En la Pi
+  real sí la pide, y por eso el script de subida usa `ssh -t`.
+- **Al pararla, Docker la corta a la fuerza** (código 137): emulado, systemd no atiende la señal de
+  apagado. No se pierde nada. En la Pi real se apaga con `sudo shutdown now`.
+- **El video de prueba viene de YouTube** y lleva fotogramas duplicados. Para medirlo como cámara
+  RTSP hay que poner `FPS_CAMARA: 15.0`; una cámara IP real lleva `null`.
+
+**Resultados de la prueba:**
+
+| Prueba | Resultado |
+|---|---|
+| Instalación desde cero (paquetes del sistema, entorno Python, OpenCV 5.0 sin pantalla, numpy 2.5, servicio) | Correcta, **~8 min** emulada |
+| `stiv.sh prueba` con el video incluido | **Mismos números que en el PC** |
+| Activar el servicio y reiniciar el contenedor | El servicio **arranca solo** |
+| Actualizar solo el código (`-SinInstalar`) | **6 s**, sin pisar la configuración de la Pi |
+| `traer_resultados.ps1` | Trae CSV, imagen y configuraciones |
+| **Cámara RTSP simulada**: servidor mediamtx emitiendo el video en H.264, conectado como cámara nueva | Mide; configurada después solo con su JSON |
+| Corte de la emisión RTSP durante 8 s | **Reconecta solo** y vuelve a medir a los 10 s (lo que tarda en llenarse la STI) |
+
+**Fallos reales que encontró la prueba (todos corregidos):**
+
+1. Una función de PowerShell llamada `Ssh` se llamaba a sí misma en bucle (PowerShell no distingue
+   mayúsculas de minúsculas en los nombres).
+2. `cv2.destroyAllWindows()` falla en OpenCV sin pantalla.
+3. Tras una reconexión el tiempo del flujo volvía a 0 y no se medía nada hasta superar el tiempo de
+   antes del corte. Ahora cualquier discontinuidad (reconexión, tiempo que retrocede, salto de más de
+   1 s) vacía la STI y **re-ancla el reloj**.
+4. La cola de 600 fotogramas llevaba la memoria a **1.3 GB**. Con 150 queda en **~626 MB**, que cabe
+   con holgura en una Pi de 4 GB.
+
+**Lo que la emulación no puede decir** (pendiente de la Raspberry real):
+
+- La velocidad real de una Pi 4B: la emulación no informa de eso. En el PC son 1–2 ms por fotograma
+  y ~0.5 s por medida; es lo primero que mide `stiv.sh prueba` en la Pi.
+- El registro con `journalctl` (no funciona en el contenedor, así que `stiv.sh registro` no muestra
+  nada), la temperatura (`vcgencmd` no existe), el nombre `stiv-rio.local` (no hay mDNS, se entra por
+  `localhost:2222`), la contraseña de `sudo` a través de SSH y `-ConfigurarLlave`.
+- Una cámara Hikvision real. Además, `ACTIVIDAD_MIN` se midió sobre el códec de YouTube y habrá que
+  volver a medirlo con esa cámara.
+
+### 12.3 Repositorio en GitHub
+
+Todo el workspace se guardó en un repositorio privado
+(`github.com/SCaballero427/medicion-caudal-video`), incluidos los entornos, los binarios y los datos.
+El video estabilizado de 1.1 GB va por Git LFS, porque supera el límite de 100 MB de GitHub.
+
+---
+
+## 13. Algoritmos probados, en resumen
 
 | Algoritmo | Dónde | Estado |
 |---|---|---|
@@ -471,7 +594,7 @@ funciona en este equipo.
 
 ---
 
-## 13. Tiempos de procesamiento
+## 14. Tiempos de procesamiento
 
 | Proceso | Tiempo | Memoria |
 |---|---|---|
@@ -492,13 +615,18 @@ funciona en este equipo.
 | Canal: alcance / video de alcance / video del filtro | ~6 / ~7 / ~4 min | — |
 | Canal: STIV mejorado / video de la sección completa | ~9 / ~7 min | — |
 | STIV en directo | 1 medida por segundo (~140 ms); primera medida a los 10 s | — |
+| STIV en directo tras la optimización | 1–2 ms por fotograma (antes 4–9 ms) | ~626 MB (antes 1.3 GB) |
+| Primera vez del banco Docker (construir la imagen + instalar emulado) | ~10–15 min | ~1 GB de imágenes Docker |
+| Instalación en la Raspberry emulada en Docker | ~8 min (emulado) | — |
+| Actualizar solo el código en la Pi (`-SinInstalar`) | 6 s | — |
+| Reconexión RTSP tras un corte | Vuelve a medir a los 10 s | — |
 
 **Lección de costes:** en STIV, el algoritmo es el 0.1 % del tiempo; leer el video es el 99.9 %.
 LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 
 ---
 
-## 14. Resultados finales
+## 15. Resultados finales
 
 | Caso | Método | Resultado | Referencia |
 |---|---|---|---|
@@ -513,10 +641,11 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 | Arrow sin trazadores | STIV, 9 variantes | 0 de 49 | No medible, explicado |
 | Canal de riego | STIV + top-hat | 6 de 15 estaciones, 0.0590 alturas/s | r 0.984 con PTV |
 | Cámaras de Tokio en directo | STIV en tiempo real | 0.45 m/s (Myoshoji, de día) | Escala supuesta, sin referencia |
+| Raspberry Pi emulada en Docker | Mismo STIV, sin pantalla, como servicio | Mismos números que en el PC; reconecta sola | Velocidad real de la Pi sin medir |
 
 ---
 
-## 15. Reglas de trabajo que salieron del proceso
+## 16. Reglas de trabajo que salieron del proceso
 
 1. **La referencia se abre una sola vez, al final.** Nada se ajusta después (de ahí que se eliminaran
    el barrido de `v_corr` y los detectores automáticos sobreajustados).
@@ -527,3 +656,5 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 4. **Las orillas fallan en todos los casos:** sombra, poca agua y pocas partículas.
 5. **Sin trazador no hay medida, y lejos de la cámara tampoco:** paso de muestreo ≥ 0.2 px.
 6. **Todo error encontrado lo detectó un control (sintético o real), no la lectura del código.**
+7. **Probar el despliegue antes de tener el hardware:** la Raspberry emulada en Docker y la cámara RTSP
+   simulada sacaron cuatro fallos que en el campo habrían dejado el equipo sin medir.

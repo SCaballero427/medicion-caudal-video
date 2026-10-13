@@ -1282,6 +1282,49 @@ machine** — it has no `Scripts\` (copied from another computer, whose user was
 - Open item: in one short daytime Kurome run, its station 8 (over the near-bank vegetation) passed
   QC at 1.18 m/s, just under `V_MAX_FISICA` = 1.2. Not investigated.
 
+### `raspberry/` — the same tool on a Raspberry Pi 4B, headless
+
+Added 2026-10-12 so the user can deploy the moment the hardware arrives. `raspberry/LEEME.md` is a
+from-zero, step-by-step guide (the user has never used a Pi). PC side: `subir_a_raspberry.bat/.ps1`
+packs `stiv_directo.py` + `raspberry/` + every `salidas/*/config_stiv_directo.json` into a tgz,
+converts text files to LF, scp's it to `~/stiv` and runs `instalar.sh` over `ssh -t`
+(`-SinInstalar` = copy + restart only, `-ConfigurarLlave`, `-SobrescribirConfig`);
+`traer_resultados.bat/.ps1` pulls `salidas/` into `salidas_raspberry\`. The `.bat` wrappers exist
+because this Windows' execution policy is undefined, i.e. Restricted, for `.ps1`. Pi side:
+`instalar.sh` (idempotent: apt, venv with **opencv-python-headless**, `stiv.conf` and camera configs
+only if absent, systemd unit from a template), `stiv.sh` (prueba/activar/estado/registro/salud...),
+`stiv.conf` (holds `STIV_ARGS`; the unit expands it unbraced so systemd word-splits it), and
+`prueba/myoshoji_20s.mp4` (20 s re-encoded to H.264 from frames recorded before YouTube blocked this
+PC — good for function and speed, **not** for measurement: re-encoding noise passes `ACTIVIDAD_MIN`).
+
+What changed in `stiv_directo.py` for it: `--fuente` (any non-YouTube URL opened directly; RTSP over
+TCP via `OPENCV_FFMPEG_CAPTURE_OPTIONS`; 15 s open/read timeouts), `--camara` accepts **new names**
+whose URL and per-camera parameters then live in their JSON (`CAMARA_NUEVA`, `fps_camara` None = no
+duplicated frames), `--paso-medida`, `--vista-cada` (atomic PNG write), `STIV_COOKIES` for yt-dlp,
+grey+blur only on the lines' bounding box (`Geometria.procesar`, **bit-identical**, 6–8x cheaper),
+frame queue 600 → 150, and a summary that reports measurement time and queue backlog.
+
+Tested without a Pi, in an **emulated aarch64 Debian 13 container with systemd + sshd**, driving it
+with the real `.ps1`: full install from scratch, `stiv.sh prueba` (same numbers as the PC), service
+enabled → survives a container reboot, `-SinInstalar` update, `traer_resultados`. And against a
+**mediamtx RTSP server** fed the test clip, including an 8 s interruption. Four real bugs came out of
+that, all fixed: a PowerShell function named `Ssh` recursing into itself (names are
+case-insensitive); `cv2.destroyAllWindows()` raising in headless OpenCV; after a reconnection the
+stream's PTS restart at 0 and `t_ult_medida` was not reset, so nothing was measured until the new t
+passed the old one — now every discontinuity (reconnection, backwards PTS, >1 s jump) clears the STI
+and **re-anchors** the clock so t keeps growing; and the 600-frame queue peaking at 1.3 GB RAM.
+**Not tested**: real Pi 4 speed (emulation says nothing), `journalctl`/`vcgencmd`, mDNS, `sudo`
+password over `ssh -t`, `-ConfigurarLlave`, a real Hikvision.
+
+That test bench is kept, reproducible, in **`pruebas_docker/`** (deliberately *outside* `raspberry/`,
+whose contents all ship to the Pi): `pi_falsa/Dockerfile` (Debian 13 arm64, systemd, dbus, sshd,
+user `stiv` with passwordless sudo), `docker-compose.yml` (`stiv-pi-falsa` on `localhost:2222`,
+`stiv-rtsp-srv` mediamtx on 8554, `stiv-rtsp-pub` looping the test clip as a fake IP camera), and
+`probar_en_docker.ps1/.bat` which brings it up, plants a test key in `pruebas_docker/.llave/` (never
+the user's `~/.ssh`), runs the real `subir_a_raspberry.ps1` against it and then `stiv.sh prueba`;
+`-Parar`/`-Arrancar` stop and restart the containers keeping everything (the user asked that sessions end with **stop, never delete**); `-Bajar [-BorrarImagenes]` deletes them. Container names are prefixed `stiv-` because this Docker
+also holds ~10 unrelated containers of the user's.
+
 ## Picking the next dataset
 
 `datasets_prueba_pyorc.xlsx` ranks 17 candidate datasets by how useful they are for *testing pyorc*

@@ -1,0 +1,215 @@
+import platform
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+
+
+def get_tolerance_int():
+    """Tolerance for checking returned image intensity values.
+
+    Tolerance is needed because arm / aarch64 processors use slightly different decoding methods.
+    """
+    if platform.machine().startswith("arm") or platform.machine() == "aarch64":
+        return 5  # More lenient on ARM
+    return 0
+
+
+def get_tolerance_float():
+    """Tolerance for checking returned image intensity values.
+
+    Tolerance is needed because arm / aarch64 processors use slightly different decoding methods.
+    """
+    if platform.machine().startswith("arm") or platform.machine() == "aarch64":
+        return 0.2  # More lenient on ARM
+    return 0
+
+
+@pytest.mark.parametrize(
+    ("frames", "resolution", "method", "dims", "shape", "kwargs"),
+    [
+        ("frames_grayscale", 0.25, "numpy", 3, (19, 15), {}),
+        ("frames_grayscale", 0.25, "numpy", 3, (19, 15), {"reducer": "mean"}),
+        ("frames_rgb", 0.25, "numpy", 4, (19, 15, 3), {"reducer": "mean"}),
+        ("frames_rgb", 0.25, "numpy", 4, (19, 15, 3), {}),
+        ("frames_grayscale", 0.25, "cv", 3, (19, 15), {}),
+        ("frames_grayscale", 0.01, "cv", 3, (475, 371), {}),
+        ("frames_grayscale", 0.05, "cv", 3, (95, 74), {}),
+        ("frames_rgb", 0.25, "cv", 4, (19, 15, 3), {}),
+    ],
+)
+def test_project(frames, resolution, method, dims, shape, kwargs, request):
+    frames = request.getfixturevalue(frames)
+    frames_proj = frames.frames.project(resolution=resolution, method=method, **kwargs)
+    # check amount of time steps is equal
+    assert len(frames_proj.time) == len(frames.time)
+    # check if the amount of dims is as expected (different for rgb)
+    assert len(frames_proj.dims) == dims, f"Expected nr of dims is {dims}, but {len(frames_proj.dims)} found"
+    # check shape of x, y grids
+    assert (
+        frames_proj.isel(time=0).shape == shape
+    ), f"Projected frames shape {frames_proj.isel(time=0).shape} do not have expected shape {shape}"
+
+
+def test_time_diff(frames_grayscale):
+    time_diff = frames_grayscale.frames.time_diff()
+    # shape should be less than orginal by 1, because it is the difference in time
+    assert time_diff.shape[0] == frames_grayscale.shape[0] - 1
+
+
+@pytest.mark.parametrize(
+    ("frames", "samples"),
+    [
+        ("frames_grayscale", 2),
+        ("frames_grayscale_shift", 2),
+        ("frames_proj", 2),
+    ],
+)
+def test_normalize(frames, samples, request):
+    frames = request.getfixturevalue(frames)
+    frames_norm = frames.frames.normalize(samples=samples)
+    assert (
+        frames_norm[0, 0, 0].values.dtype == "uint8"
+    ), f'dtype of result is {frames_norm[0, 0, 0].values.dtype}, expected "uint8"'
+
+
+def test_range(frames_grayscale):
+    frames_range = frames_grayscale.frames.range()
+    tolerance = get_tolerance_int()
+    assert len(frames_range.shape) == 2, "shape of result is not 2D"
+    assert frames_range.dtype == frames_grayscale.dtype, f'dtype of result is {frames_range.dtype}, expected "uint8"'
+    assert np.allclose(
+        frames_range.values.flatten()[-4:], [22, 27, 22, 31], atol=tolerance
+    ), "last 4 values are not as expected"
+
+
+def test_smooth(frames_grayscale):
+    frames_smooth = frames_grayscale.frames.smooth()
+    tolerance = get_tolerance_int()
+    assert frames_smooth.shape == frames_grayscale.shape
+    assert (
+        frames_smooth[0, 0, 0].values.dtype == "float32"
+    ), f'dtype of result is {frames_smooth[0, 0, 0].values.dtype}, expected "float32"'
+    assert np.allclose(frames_smooth.values.flatten()[-4:], [158.125, 153.5, 151.375, 151.0], atol=tolerance)
+
+
+def test_edge_detect(frames_proj):
+    frames_edge = frames_proj.frames.edge_detect()
+    tolerance = get_tolerance_float()
+    assert frames_edge.shape == frames_proj.shape
+    assert (
+        frames_edge[0, 0, 0].values.dtype == "float32"
+    ), f'dtype of result is {frames_edge[0, 0, 0].values.dtype}, expected "float32"'
+    assert np.allclose(frames_edge.values.flatten()[-4:], [-5.6953125, 4.0703125, 8.0625, 4.3125], atol=tolerance)
+
+
+def test_reduce_rolling(frames_grayscale, samples=1):
+    frames_reduced = frames_grayscale.frames.reduce_rolling(samples=samples)
+    assert frames_reduced.shape == frames_grayscale.shape
+
+
+@pytest.mark.parametrize(
+    "frames",
+    [
+        "frames_grayscale",
+        "frames_rgb",
+    ],
+)
+@pytest.mark.parametrize("idx", [0, -1])
+def test_plot(frames, idx, request):
+    frames = request.getfixturevalue(frames)
+    frames[idx].frames.plot()
+    plt.close("all")
+    frames[idx].frames.plot(mode="camera")
+
+
+@pytest.mark.parametrize("idx", [0, -1])
+def test_plot_proj(frames_proj, idx):
+    frames_proj[idx].frames.plot()
+    # plt.show(block=False)
+    # plt.close("all")
+    try:
+        frames_proj[idx].frames.plot(mode="geographical")
+        # plt.show(block=False)
+        # plt.close("all")
+    except ImportError:
+        print("Cartopy is missing, skipping cartopy dependent test")
+
+
+@pytest.mark.parametrize(
+    ("window_size", "engine", "ensemble_corr", "result"),
+    [
+        (10, "numba", True, [0.10917795, 0.10898168, 0.11020568, 0.12450387]),  # filtering occurs within piv process
+        (10, "numba", False, [0.10837663, 0.11250661, 0.11100861, 0.1231317]),
+    ],
+)
+def test_get_piv(frames_proj, window_size, engine, ensemble_corr, result):
+    tolerance = get_tolerance_float() / 10
+    piv = frames_proj.frames.get_piv(
+        window_size=window_size, ensemble_corr=ensemble_corr, engine=engine, s2n_min=0, corr_min=0, count_min=0
+    )
+    piv_mean = piv.mean(dim="time", keep_attrs=True)
+    # check if results are stable
+    assert np.allclose(piv_mean["v_x"].values.flatten()[-4:], result, equal_nan=True, atol=tolerance)
+
+
+@pytest.mark.parametrize(
+    "frames",
+    [
+        "frames_grayscale",
+        "frames_rgb",
+        "frames_proj",
+    ],
+)
+def test_to_ani(frames, ani_mp4, request):
+    frames = request.getfixturevalue(frames)
+    frames.frames.to_ani(ani_mp4, progress_bar=False)
+
+
+def test_to_geotiff_no_projection(tmp_path, frames_grayscale):
+    """Test failure with an Exception, because geotiff export requires projection information."""
+    fn = str(tmp_path / "out.tif")
+    with pytest.raises(ValueError, match="must be projected"):
+        frames_grayscale.frames.to_geotiff(fn=fn, frame=0)
+
+
+def test_to_geotiff_too_high_frame(tmp_path, frames_proj):
+    """Test failure with an Exception, because frame number is above available nr of frames."""
+    fn = str(tmp_path / "out.tif")
+    with pytest.raises(ValueError, match="out of bounds"):
+        frames_proj.frames.to_geotiff(fn=fn, frame=9999999)
+
+
+def test_to_geotiff(tmp_path, frames_proj, monkeypatch):
+    monkeypatch.setattr("pyorc.api.frames.helpers.to_geotiff", lambda *args, **kwargs: None, raising=False)
+    fn = str(tmp_path / "out.tif")
+    frames_proj.frames.to_geotiff(fn=fn, frame=0)
+
+
+def test_to_geotiffs(tmp_path, frames_proj, monkeypatch):
+    """Test exporting a list of frames of length one to geotiffs. Mock actual export."""
+    monkeypatch.setattr("pyorc.api.frames.helpers.to_geotiff", lambda *args, **kwargs: None, raising=False)
+    fn = str(tmp_path / "out_")
+    frames_proj.frames.to_geotiffs(prefix=fn, start_frame=0, end_frame=2)
+
+
+def test_to_geotiffs_too_high_end_frame(tmp_path, frames_proj, monkeypatch):
+    """Test exporting a list of frames of length one to geotiffs. Mock actual export."""
+    monkeypatch.setattr("pyorc.api.frames.helpers.to_geotiff", lambda *args, **kwargs: None, raising=False)
+    fn = str(tmp_path / "out_")
+    with pytest.raises(ValueError, match="Invalid frame range"):
+        frames_proj.frames.to_geotiffs(prefix=fn, start_frame=0, end_frame=4)
+
+
+@pytest.mark.parametrize(
+    "frames",
+    [
+        "frames_grayscale",
+        "frames_rgb_stabilize",
+        "frames_proj",
+    ],
+)
+def test_to_video(frames, ani_mp4, request):
+    frames = request.getfixturevalue(frames)
+    # only store the first 3 frames
+    frames[0:3].frames.to_video(ani_mp4)

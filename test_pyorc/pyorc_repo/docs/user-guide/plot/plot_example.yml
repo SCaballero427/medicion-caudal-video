@@ -1,0 +1,23 @@
+...
+...
+
+plot:
+  plot_quiver:
+    frames:
+    velocimetry:
+      alpha: 0.4
+      cmap: rainbow
+      vmax: 0.6
+    transect:
+      transect_1:
+        cmap: rainbow
+        add_colorbar: True
+        # width: 2  # uncommenting woul make the arrows 2x thicker than default
+        # scale: 0.5  # uncommenting would make the arrows twice as long as default
+        vmin: 0
+        vmax: 0.6
+    mode: camera
+    reducer: mean
+    write_pars:
+      dpi: 100
+      bbox_inches: tight

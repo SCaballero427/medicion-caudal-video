@@ -1,0 +1,43 @@
+{
+  "v_min": -0.15,
+  "v_max": 0.15,
+  "n_cand": 121,
+  "n_lineas": 15,
+  "n_barajados": 12,
+  "factores": [
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.5,
+    6.5
+  ],
+  "semilla": 20260818,
+  "bandas": [
+    [
+      0.1,
+      0.9,
+      1.6,
+      2.9,
+      "cerca"
+    ],
+    [
+      0.1,
+      0.9,
+      3.3,
+      4.9,
+      "media"
+    ],
+    [
+      0.1,
+      0.9,
+      5.0,
+      8.5,
+      "lejos"
+    ]
+  ],
+  "n_frames": 0,
+  "fps": 29.97531879884821,
+  "video_md5": "7b8576e5f9f37d789041a2b1a0f0eb57",
+  "hereda_de": "analisis_canal_riego_stiv/stiv_canal.py"
+}

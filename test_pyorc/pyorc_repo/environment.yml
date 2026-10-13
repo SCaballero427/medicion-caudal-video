@@ -1,0 +1,36 @@
+name: pyorc
+
+channels:
+  - conda-forge
+
+# note that these are the developer dependencies,
+# if you only want the user dependencies, see
+# install_requires in setup.py
+dependencies:
+  - cartopy
+  - dask
+  - descartes
+  - flox
+  - geojson
+  - geopandas
+  - geos
+  - jupyter
+  - matplotlib
+  - netCDF4
+  - numba
+  - numpy
+  - opencv
+  - pip
+  - pyproj
+  - python
+  - rasterio
+  - requests
+  - scipy
+  - shapely
+  - tqdm
+  - typeguard
+  - xarray
+  - yaml
+  - pip:
+    - git+https://github.com/localdevices/pyorc.git
+    - git+https://github.com/localdevices/rocket-fft.git

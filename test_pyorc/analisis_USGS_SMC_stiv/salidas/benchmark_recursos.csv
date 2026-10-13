@@ -1,0 +1,5 @@
+etapa,segundos,cpu_s,nucleos,ram_pico_mb,ram_neta_mb,n_frames,lineas,pct_tiempo
+Parte 3: construir las STI (unica pasada sobre el video),33.77,122.78,3.64,868.8,2.7,250.0,13.0,99.9
+Parte 3: preparar las STI,0.0,0.0,0.0,273.6,3.3,,13.0,0.0
+Parte 4: tensor de estructura en todas las verticales,0.02,0.02,0.97,295.9,0.1,,13.0,0.1
+Parte 5: integracion del caudal,0.0,0.0,0.0,292.3,0.0,,,0.0

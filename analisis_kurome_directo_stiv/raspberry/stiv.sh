@@ -26,11 +26,11 @@ Uso: ./raspberry/stiv.sh <orden>
 EOF
 }
 
-servicio_activo() { systemctl is-active --quiet stiv 2>/dev/null; }
-
 parar_si_activo() {
-    if servicio_activo; then
-        echo "(el servicio estaba en marcha: se para durante la prueba; luego: ./raspberry/stiv.sh arrancar)"
+    # tambien si solo esta activado: entre dos relanzamientos is-active da falso y el servicio
+    # volveria a arrancar a mitad de la prueba, compitiendo con ella por la CPU
+    if systemctl is-active --quiet stiv 2>/dev/null || systemctl is-enabled --quiet stiv 2>/dev/null; then
+        echo "(se para el servicio durante la prueba; para volver a ponerlo en marcha: ./raspberry/stiv.sh arrancar)"
         sudo systemctl stop stiv
     fi
 }

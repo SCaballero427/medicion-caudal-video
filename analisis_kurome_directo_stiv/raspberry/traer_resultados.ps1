@@ -16,7 +16,12 @@ param(
     [switch]$Abrir,
     [string[]]$OpcionesSsh = @()
 )
-$ErrorActionPreference = "Stop"
+# Los cmdlets paran ante cualquier error; los programas externos (docker, ssh, scp, tar) NO: en
+# PowerShell 5.1 con "Stop", todo lo que escriben en stderr (progreso, avisos como "Permanently
+# added...") se vuelve un error fatal en cuanto la salida esta redirigida. A ellos se los juzga por
+# su codigo de salida ($LASTEXITCODE), que se comprueba despues de cada llamada.
+$ErrorActionPreference = "Continue"
+$PSDefaultParameterValues = @{ "*:ErrorAction" = "Stop" }
 $caso = Split-Path $PSScriptRoot -Parent
 $local = Join-Path $caso "salidas_raspberry"
 New-Item -ItemType Directory -Force $local | Out-Null

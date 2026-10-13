@@ -1,0 +1,17 @@
+concepto,valor,unidad
+"Estaciones aceptadas, video SIN SEMBRAR",0.0,de 49
+"Estaciones aceptadas, video SEMBRADO",44.0,de 49
+"Coherencia mediana, sin sembrar",0.1961,-
+"Coherencia mediana, sembrado",0.9271,-
+"Coherencia MAXIMA, sin sembrar",0.5948,umbral 0.7
+"Contraste temporal mediano, sin sembrar",0.708,niveles de gris
+"Contraste temporal mediano, sembrado",6.736,niveles de gris
+Velocidad media STIV (sembrado),0.3891,m/s
+Velocidad media de referencia (mismas verticales),0.4172,m/s
+Sesgo STIV vs referencia,-0.0281,m/s
+RMSE STIV vs referencia,0.1645,m/s
+Correlacion STIV vs referencia,-0.0869,-
+Correlacion PIV vs referencia,-0.0094,-
+Correlacion STIV vs PIV,0.9739,-
+Escala (dada por el dataset),0.0174,m/px
+Caudal,,no calculable: el dataset no da batimetria

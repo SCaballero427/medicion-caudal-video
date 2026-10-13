@@ -1,0 +1,58 @@
+{
+  "bandas": [
+    [
+      1.4,
+      3.2,
+      "cerca"
+    ],
+    [
+      3.2,
+      5.0,
+      "media"
+    ],
+    [
+      5.0,
+      8.0,
+      "lejos"
+    ]
+  ],
+  "diezmados": {
+    "cerca": [
+      1
+    ],
+    "media": [
+      1,
+      8
+    ],
+    "lejos": [
+      1,
+      20,
+      40
+    ]
+  },
+  "mitades": [
+    [
+      1.4,
+      2.3,
+      "mitad cercana"
+    ],
+    [
+      2.3,
+      3.2,
+      "mitad lejana"
+    ]
+  ],
+  "estaciones": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "n_frames": 2429,
+  "fps": 29.97531879884821,
+  "DS_base": 0.0018682036503362151,
+  "focal": 780.0,
+  "hereda_de": "analisis_canal_riego_stiv/stiv_canal.py"
+}

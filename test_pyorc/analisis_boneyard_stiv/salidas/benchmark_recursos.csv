@@ -1,0 +1,4 @@
+etapa,segundos,cpu_s,nucleos,ram_pico_mb,ram_neta_mb,n_frames,ds,n_est,bloque,pct_tiempo
+Parte 1: triaje de los 61 videos,20.55,90.22,4.39,217.3,15.0,61.0,,,,77.4
+Parte 3: construir el STI,5.96,42.95,7.2,287.5,4.7,250.0,5.0,21.0,,22.4
+Parte 4: tensor de estructura,0.05,0.06,1.19,279.1,0.2,,,21.0,48.0,0.2

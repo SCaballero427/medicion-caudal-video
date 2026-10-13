@@ -1,0 +1,18 @@
+{
+  "ventana": 360,
+  "paso": 15,
+  "escala_rect": 130.0,
+  "seg_flecha": 10.0,
+  "estacion_sti": 11,
+  "n_frames": 2429,
+  "fps": 29.97531879884821,
+  "n_ventanas": 138,
+  "dimension": [
+    1876,
+    996
+  ],
+  "hereda_de": [
+    "analisis_canal_riego_stiv/stiv_canal.py",
+    "experimento_alcance.py"
+  ]
+}

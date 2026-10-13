@@ -1,0 +1,5 @@
+etapa,segundos,cpu_s,nucleos,ram_pico_mb,ram_neta_mb,n_frames,lineas,pct_tiempo
+Parte 3: leer el video y construir las STI,62.88,73.06,1.16,267.9,21.1,600.0,63.0,99.2
+Parte 3b: preparar y promediar la banda,0.18,0.16,0.85,230.5,0.7,,9.0,0.3
+Parte 4: tensor de estructura en todas las estaciones,0.3,0.22,0.73,241.3,0.2,,9.0,0.5
+Parte 5: perfil transversal,0.0,0.0,0.0,241.5,0.0,,,0.0

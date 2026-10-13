@@ -64,11 +64,9 @@ if [ -d /run/systemd/system ]; then
     sed -e "s|__USUARIO__|$USUARIO|g" -e "s|__RAIZ__|$RAIZ|g" "$RAIZ/raspberry/stiv.service" \
         | sudo tee /etc/systemd/system/stiv.service > /dev/null
     sudo systemctl daemon-reload
-    if systemctl is-active --quiet stiv; then
+    if systemctl is-enabled --quiet stiv 2>/dev/null || systemctl is-active --quiet stiv; then
         sudo systemctl restart stiv
-        echo "el servicio estaba en marcha: reiniciado con el codigo nuevo"
-    elif systemctl is-enabled --quiet stiv 2>/dev/null; then
-        echo "servicio instalado y activado para el arranque (ahora parado)"
+        echo "servicio activado: reiniciado con el codigo nuevo"
     else
         echo "servicio instalado pero NO activado: activalo con  ./raspberry/stiv.sh activar"
     fi

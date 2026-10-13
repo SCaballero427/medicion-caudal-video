@@ -383,7 +383,10 @@ class Lector(threading.Thread):
         self.origen, self.es_archivo = origen, es_archivo
         # YouTube se resuelve con yt-dlp; cualquier otra URL (rtsp://, http://...m3u8) se abre tal cual
         self.es_youtube = not es_archivo and ("youtube.com" in origen or "youtu.be" in origen)
-        self.cola = queue.Queue(maxsize=600)
+        # 150 fotogramas = 5 s a 30 fps, ~415 MB a 1280x720. Con 600 el pico de memoria llego a 1.3 GB
+        # al procesar un archivo (la lectura va por delante): demasiado para una Raspberry de 4 GB.
+        # Si se llena, el lector espera; no se pierde la sincronia del STI.
+        self.cola = queue.Queue(maxsize=150)
         self.parar = threading.Event()
         self.fps = 30.0
         self.titulo = ""
@@ -663,6 +666,7 @@ def main():
     gen = 0                 # cambia cada vez que el buffer deja de ser continuo; descarta medidas viejas
     pts_prev, t_ult_medida, res = None, -1e9, None
     t_ini_flujo, reloj_ini, t = None, None, 0.0
+    reanclar = False        # tras una discontinuidad, el reloj del flujo se re-ancla para que t siga creciendo
     n_fotogramas, coste_proceso = 0, 0.0
     t_ult_vista, reloj_arranque = 0.0, time.time()
     editando, congelado, arrastre, ultimo = False, False, None, None
@@ -697,7 +701,7 @@ def main():
             if item is None:
                 break
             if item == "corte":
-                filas.clear(); pts_prev = None; t_ini_flujo = None; gen += 1
+                filas.clear(); pts_prev = None; reanclar = True; gen += 1
                 continue
             pts, frame = item
             c0 = time.perf_counter()
@@ -706,14 +710,22 @@ def main():
                 t_ini_flujo, reloj_ini = pts, time.time()
             fila = geom.procesar(frame)
             # el STI exige filas equiespaciadas en tiempo: un hueco de PTS se rellena repitiendo la
-            # ultima fila (lo mismo que hace YouTube con los duplicados); uno largo reinicia
+            # ultima fila (lo mismo que hace YouTube con los duplicados). Un salto de mas de 1 s o un
+            # PTS que RETROCEDE (camara o emisor reiniciado: el tiempo vuelve a empezar en 0, medido
+            # con un servidor RTSP de prueba) es una discontinuidad: STI vacio y reloj re-anclado.
+            # Sin re-anclar, t volvia atras y no se media hasta superar el t de antes del corte.
             if pts_prev is not None:
-                huecos = int(round((pts - pts_prev) * lector.fps)) - 1
-                if huecos > lector.fps:
-                    filas.clear(); gen += 1
-                elif huecos > 0 and filas:
-                    for _ in range(huecos):
-                        filas.append(filas[-1])
+                pasos = (pts - pts_prev) * lector.fps
+                if pasos < -0.5 or pasos > lector.fps + 1:
+                    filas.clear(); gen += 1; reanclar = True
+                else:
+                    for _ in range(int(round(pasos)) - 1):
+                        if filas:
+                            filas.append(filas[-1])
+            if reanclar:
+                t_ini_flujo = pts - (t + 1.0 / lector.fps)
+                reloj_ini = time.time() - (t + 1.0 / lector.fps)
+                reanclar = False
             filas.append(fila)
             pts_prev = pts
             t = pts - t_ini_flujo
@@ -807,7 +819,9 @@ def main():
             if medidor.n:
                 print(f"medida: {1000 * medidor.segundos / medidor.n:.0f} ms de media en {medidor.n} "
                       f"medidas (cada {PASO_MEDIDA_S:g} s de flujo)")
-        cv2.destroyAllWindows()
+        if not args.sin_ventana:
+            # en OpenCV sin interfaz (opencv-python-headless, el de la Raspberry) esto da error
+            cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":

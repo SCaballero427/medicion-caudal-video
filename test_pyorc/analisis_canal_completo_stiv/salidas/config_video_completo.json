@@ -1,0 +1,13 @@
+{
+  "n_particulas": 520,
+  "semilla": 20260819,
+  "estela_seg": 1.2,
+  "escala_rect": 320.0,
+  "modelo": "SKM",
+  "dimension": [
+    1795,
+    888
+  ],
+  "n_frames": 2429,
+  "fps": 29.97531879884821
+}

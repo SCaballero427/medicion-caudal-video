@@ -1,0 +1,6 @@
+Filename: GOPR3225_Trim.mp4
+Extracted from: 0 s to 15 s; Total: 15 s
+Resolution: 1920:1080
+@ 15 fps; time step: 66.6667 ms
+Grayscale: No
+Lens Correction: No

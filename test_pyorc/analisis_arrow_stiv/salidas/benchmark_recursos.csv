@@ -1,0 +1,10 @@
+etapa,segundos,cpu_s,nucleos,ram_pico_mb,ram_neta_mb,n_frames,lineas,pct_tiempo
+Parte 1: cargar el video [sin sembrar],0.74,0.78,1.06,336.7,95.4,99.0,,4.4
+Parte 1: cargar el video [sembrado],0.76,0.92,1.21,347.0,92.8,98.0,,4.5
+Parte 3: construir las STI [sin sembrar],0.68,0.67,0.99,469.3,-0.7,99.0,49.0,4.0
+Parte 3: construir las STI [sembrado],0.77,0.72,0.94,469.2,-0.0,98.0,49.0,4.5
+Parte 4: tensor de estructura [sin sembrar],0.16,0.16,0.97,383.6,0.2,,49.0,0.9
+Parte 4: tensor de estructura [sembrado],0.14,0.12,0.87,383.6,0.0,,49.0,0.8
+Parte 4c: nueve variantes de rescate,9.16,8.56,0.93,574.9,1.0,99.0,,54.0
+Parte 4c: curvas de decorrelacion,4.53,4.41,0.97,573.4,3.9,197.0,,26.7
+Parte 5: perfiles transversales,0.01,0.0,0.0,394.2,0.0,,,0.1

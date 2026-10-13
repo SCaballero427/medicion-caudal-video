@@ -1,0 +1,28 @@
+{
+  "n_estaciones": 29,
+  "ventana": 360,
+  "paso": 15,
+  "filtro_n_cand": 61,
+  "filtro_n_nulos": 12,
+  "filtro_decima": 4,
+  "izq_x": [
+    -0.9,
+    -0.6,
+    -0.3,
+    0.0
+  ],
+  "izq_lineas": 61,
+  "izq_banda": 0.3,
+  "n_frames": 2429,
+  "fps": 29.97531879884821,
+  "DS": 0.0018682036503362151,
+  "n_muestras": 963,
+  "focal": 780.0,
+  "ancho_canal": 2.250516992669585,
+  "X_izq": -1.1493089176744404,
+  "X_der": 1.101208074995145,
+  "hereda_de": [
+    "analisis_canal_riego_stiv/stiv_canal.py",
+    "analisis_canal_filtro_adaptado/filtro_adaptado.py"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "videos": {
+    "sin sembrar": "C:\\Users\\Sergio\\Desktop\\datasets vision velocimetria\\data\\RiverArrow\\Stabilised\\GoPro_Stable_trans_Unseeded\\Video\\Arrow_GoPro_Unseeded_Stabilised.avi",
+    "sembrado": "C:\\Users\\Sergio\\Desktop\\datasets vision velocimetria\\data\\RiverArrow\\Stabilised\\GoPro_stable_trans_seeded\\Video\\Arrow_GoPro_Seeded_Stabilised.avi"
+  },
+  "n_frames": 98,
+  "fps": 5.0,
+  "escala_m_px": 0.0174,
+  "n_estaciones": 49,
+  "angulos_seccion_grados": {
+    "XS1": 8.168,
+    "XS2": 13.337,
+    "XS3": 16.043,
+    "XS4": 13.87,
+    "XS5": 12.836
+  },
+  "v_esperada_ms": 0.45,
+  "ds_px": 5,
+  "largo_sti": 48,
+  "ancho_banda_px": 6,
+  "paso_banda_px": 3,
+  "cobertura_min": 0.5,
+  "lado_bloque": 24,
+  "coh_min_bloque": 0.45,
+  "sigma_derivada": 1.2,
+  "coh_min_estacion": 0.7,
+  "contraste_min": 2.0,
+  "ventana": 48,
+  "paso_ventana": 2,
+  "v_max_fisica_ms": 1.35,
+  "n_ventanas": 25,
+  "aceptadas": {
+    "sin sembrar": 0,
+    "sembrado": 1085
+  },
+  "v_mediana_global_ms": {
+    "sin sembrar": null,
+    "sembrado": 0.399126
+  },
+  "descartes_cota_fisica": {
+    "sin sembrar": 0,
+    "sembrado": 0
+  }
+}

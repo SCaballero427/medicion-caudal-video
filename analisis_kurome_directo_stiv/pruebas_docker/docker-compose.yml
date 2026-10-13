@@ -1,0 +1,53 @@
+# Banco de pruebas del paquete raspberry/ sin hardware. Lo levanta probar_en_docker.ps1; a mano:
+#   docker compose -f pruebas_docker/docker-compose.yml up -d --build
+#   docker compose -f pruebas_docker/docker-compose.yml down
+#
+#   stiv-pi-falsa   Raspberry Pi falsa (Debian 13 arm64 + systemd + SSH) en localhost:2222
+#   stiv-rtsp-srv   servidor RTSP (mediamtx): rtsp://localhost:8554/camara desde el PC,
+#                   rtsp://stiv-rtsp-srv:8554/camara desde la Pi falsa
+#   stiv-rtsp-pub   emite raspberry/prueba/myoshoji_20s.mp4 en bucle a ese servidor, como si fuera
+#                   una camara IP (H.264 por RTSP). Para simular un corte de la camara:
+#                   docker stop stiv-rtsp-pub   (y docker start stiv-rtsp-pub para reanudar)
+name: stiv-pruebas
+
+services:
+  pi-falsa:
+    build: ./pi_falsa
+    image: stiv-pi-falsa
+    container_name: stiv-pi-falsa
+    hostname: stiv-rio
+    platform: linux/arm64
+    # Al pararla, Docker la corta a la fuerza (codigo 137): emulada, systemd no atiende la senal de
+    # apagado y "systemctl poweroff" da timeout. Se probo con 60 s de margen y no cambia nada. No se
+    # pierde lo instalado (el disco del contenedor se conserva al parar); en una Pi real, en cambio,
+    # hay que apagar con "sudo shutdown now".
+    # systemd dentro de un contenedor necesita esto
+    privileged: true
+    cgroup: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    tmpfs:
+      - /run
+      - /run/lock
+    ports:
+      - "2222:22"
+
+  rtsp-srv:
+    image: bluenviron/mediamtx:latest
+    container_name: stiv-rtsp-srv
+    ports:
+      - "8554:8554"
+
+  rtsp-pub:
+    image: linuxserver/ffmpeg:latest
+    container_name: stiv-rtsp-pub
+    network_mode: "service:rtsp-srv"
+    depends_on:
+      - rtsp-srv
+    # si arranca antes de que el servidor este listo, falla y se reintenta solo
+    restart: unless-stopped
+    volumes:
+      - ../raspberry/prueba:/clip:ro
+    command: ["-hide_banner", "-loglevel", "error", "-re", "-stream_loop", "-1",
+              "-i", "/clip/myoshoji_20s.mp4", "-c", "copy",
+              "-f", "rtsp", "-rtsp_transport", "tcp", "rtsp://localhost:8554/camara"]

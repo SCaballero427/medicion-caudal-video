@@ -1,0 +1,143 @@
+[build-system]
+requires = ["flit_core >=3.4.0,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "pyopenrivercam"
+authors = [
+  { name = "Hessel Winsemius", email = "winsemius@rainbowsensing.com" },
+]
+packages = [
+    { include = "pyorc" }
+]
+
+dependencies = [
+    "click",
+    "cython; platform_machine == 'armv7l'",
+    "dask",
+    "descartes",
+    "ffpiv>=0.2.1",
+    "flox",
+    "geojson",
+    "geopandas",
+    "matplotlib",
+    "netCDF4",
+    "numba>0.56",
+    "numpy==1.26.4; python_version == '3.9'",
+    "numpy>=2; python_version >= '3.10'",
+    "opencv-python<5.0.0",  # for now fix to <5 for backwards compatibility. See issue #302
+    "packaging; platform_machine == 'armv7l'",
+    "pillow==9.5.0; python_version == '3.9'",
+    "pillow; python_version >= '3.10'",
+    "pip",
+    "pyproj",
+    "pythran; platform_machine == 'armv7l'",
+    "pyyaml",
+    "rasterio<1.4.0; python_version <= '3.12'",
+    "rasterio; python_version > '3.12'",
+    "rocket_fft",  # remove this dependency when ffpiv is updated with rocket_fft dependency
+    "requests",
+    "scipy",
+    "shapely",
+    "tqdm",
+    "typeguard",
+    "xarray"
+]
+
+requires-python =">=3.9"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Hydrology",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14"
+]
+dynamic = ['version', 'description']
+
+[project.optional-dependencies]
+extra = [
+    "notebook",
+    "cartopy",
+    "pooch"
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pooch",
+]
+docs = [
+    "sphinx==5.3",  # >6.0 causes bug in pydata_sphinx_theme
+    "sphinx_autosummary_accessors",
+    "sphinxcontrib-programoutput",
+    "sphinx_rtd_theme",
+    "sphinx-design",
+    "pydata_sphinx_theme",
+    "ipykernel",
+    "nbsphinx",
+    "sphinx-gallery",
+    "pandoc",
+    "pooch",
+    "matplotlib",
+
+]
+
+full = ["pyopenrivercam[extra,test,docs]"]
+
+[project.urls]
+Source = "https://github.com/localdevices/pyorc"
+
+[project.scripts]
+pyorc = "pyorc.cli.main:cli"
+
+[tool.flit.sdist]
+include = ["pyorc"]
+exclude = [
+    "docs",
+    "envs",
+    "examples",
+    "tests",
+    ".github"
+]
+
+[tool.flit.module]
+name = "pyorc"
+
+[tool.pytest.ini_options]
+addopts = "--ff "
+testpaths = ["tests"]
+
+filterwarnings = [
+#    "ignore:This process *:DeprecationWarning:multiprocessing", # dask issue, related to python 3.12 stricter multiprocessing checks.
+#    "ignore:All-NaN slice encountered*:RuntimeWarning", # expected behaviour when only NaNs occur in slicing in velocimetry results.
+#    "ignore:invalid value encountered*:RuntimeWarning", # linestrings issue with plotting transects.
+#    "ignore:Degrees of freedom *:RuntimeWarning",   # not fully clear why this appears in user interfacing, test with future updates.
+    "ignore:numpy.ndarray size changed, may indicate binary incompatibility:RuntimeWarning",    # likely caused by incompatibility in used numpy version across libraries. May resolve with future updates.
+    "ignore:No water level is provided*:UserWarning",  # normal warning, which should be returned in case a water level is expected but not provided
+    "ignore:The detected water level is on the edge*:UserWarning",  # the near bank test should show this warning
+    "ignore:Memory availability*:UserWarning",  # memory availability may be small during test, not problematic
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+exclude = ["docs"]
+
+[tool.ruff.lint]
+# enable pydocstyle (E), pyflake (F) and isort (I), pytest-style (PT), bugbear (B)
+select = ["E", "F", "I", "PT", "D", "B", "ICN", "TID"]
+ignore = ["D211", "D213", "D206", "D400", "E741", "D105", "D203", "E712", "B904", "B905"]  # "E501" line length
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D100", "D101", "D102", "D103", "D104"]
+"pyorc/__init__.py" = ["E402", "F401", "F403"]
+
+"tests/conftest.py" = ["E402"]

@@ -1,1 +1,9 @@
 *.mkv filter=lfs diff=lfs merge=lfs -text
+test_pyorc/analisis_boneyard_stiv/salidas/velocidad_manual.mp4 filter=lfs diff=lfs merge=lfs -text
+test_pyorc/analisis_boneyard_stiv/salidas/velocidad_nivel.mp4 filter=lfs diff=lfs merge=lfs -text
+test_pyorc/analisis_boneyard_stiv/salidas/velocidad_nivel_chapa.mp4 filter=lfs diff=lfs merge=lfs -text
+test_pyorc/analisis_boneyard_stiv/salidas/velocidad_tiempo_real.mp4 filter=lfs diff=lfs merge=lfs -text
+test_pyorc/analisis_USGS_SMC_pyorc/entradas/SMC_estabilizado_previsualizacion.mp4 filter=lfs diff=lfs merge=lfs -text
+test_pyorc/RIVeR-STIV_1.0/RIVeR_Example/GOPR3225_Trim.mp4 filter=lfs diff=lfs merge=lfs -text
+test_pyorc/USGS/Video/SMC_D_RC_022_08172020_AC.mp4 filter=lfs diff=lfs merge=lfs -text
+test_pyorc/pyorc_env/Lib/site-packages/llvmlite/binding/llvmlite.dll filter=lfs diff=lfs merge=lfs -text

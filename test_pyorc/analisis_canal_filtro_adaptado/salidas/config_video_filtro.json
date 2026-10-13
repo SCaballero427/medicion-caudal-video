@@ -1,0 +1,50 @@
+{
+  "fps_salida": 30.0,
+  "cuadros_por_candidata": 3,
+  "cuadros_final": 120,
+  "n_candidatas": 121,
+  "n_frames_video": 2429,
+  "fps_video": 29.97531879884821,
+  "dimension": [
+    1388,
+    1040
+  ],
+  "veredictos": {
+    "sintetico": {
+      "v_pico": 0.06,
+      "score": 34.29559114244249,
+      "techo_nulo": 3.366436931822035,
+      "supera_nulo": true,
+      "z": 221.09061850733843,
+      "v_pico_invertido": -0.06
+    },
+    "cerca": {
+      "v_pico": 0.025000000000000022,
+      "score": 16.48213532235887,
+      "techo_nulo": 4.369148519304064,
+      "supera_nulo": true,
+      "z": 71.18739308917505,
+      "v_pico_invertido": -0.022499999999999992
+    },
+    "media": {
+      "v_pico": -0.1475,
+      "score": 3.177194254738944,
+      "techo_nulo": 3.815373659133911,
+      "supera_nulo": false,
+      "z": 4.945703403851329,
+      "v_pico_invertido": 0.12000000000000002
+    },
+    "lejos": {
+      "v_pico": -0.13,
+      "score": 2.65785280863444,
+      "techo_nulo": 5.43510373433431,
+      "supera_nulo": false,
+      "z": 2.2987766878442684,
+      "v_pico_invertido": -0.06749999999999999
+    }
+  },
+  "hereda_de": [
+    "analisis_canal_riego_stiv/stiv_canal.py",
+    "filtro_adaptado.py"
+  ]
+}

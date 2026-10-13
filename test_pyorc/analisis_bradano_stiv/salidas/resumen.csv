@@ -1,0 +1,12 @@
+concepto,valor,unidad
+Velocidad superficial mediana (STIV),0.727,m/s
+Velocidad media de las verticales medidas (STIV),0.8238,m/s
+Velocidad media de las mismas verticales (referencia),0.85,m/s
+Sesgo medio,-0.0262,m/s
+Sesgo medio relativo,-3.08,%
+RMSE,0.0682,m/s
+Correlacion r,0.9962,-
+Verticales de validacion medidas,5.0,de 7
+Estaciones validas,5.0,de 9
+Escala (dada por el dataset),0.009,m/px
+Caudal,,no calculable: el dataset no da batimetria

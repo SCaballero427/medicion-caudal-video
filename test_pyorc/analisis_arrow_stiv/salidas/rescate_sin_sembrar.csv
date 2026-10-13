@@ -1,0 +1,10 @@
+variante,aceptadas,coh_mediana,coh_maxima,r_vs_sembrado
+configuracion del notebook,0,0.196,0.595,0.045
+muestreo fino DS=2 (casi sin desenfoque),0,0.206,0.369,-0.119
+muestreo finisimo DS=1,0,0.248,0.339,-0.114
+banda ancha 30 px (el truco del Bradano),0,0.197,0.649,0.282
+banda ancha 60 px,0,0.203,0.532,0.402
+paso alto espacial (DoG sigma 6),0,0.255,0.543,0.453
+paso alto + banda 30,0,0.452,0.619,0.388
+una STI por seccion (10 verticales juntas),0,0.162,0.179,
+"todo a la vez: DS=2, banda 30, paso alto",0,0.254,0.354,0.364

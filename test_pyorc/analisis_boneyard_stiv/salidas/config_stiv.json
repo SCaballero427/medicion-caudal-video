@@ -1,0 +1,41 @@
+{
+  "video_medido": "03337000_bullet_20180610-082000.mp4",
+  "video_calibracion": "03337000_bullet_20180907-162000.mp4",
+  "geometria": {
+    "V1": [
+      653.0,
+      -30.9
+    ],
+    "focal_px": 640.0,
+    "cabeceo_grados": 31.416,
+    "guinada_grados": 0.993,
+    "balanceo": "supuesto nulo",
+    "extension": {
+      "xmin": -2.1,
+      "xmax": 1.85,
+      "ymin": 0.4,
+      "ymax": 2.8
+    },
+    "esc_px_por_altura_camara": 450.0
+  },
+  "stiv": {
+    "ds": 5,
+    "n_estaciones": 21,
+    "n_frames": 250,
+    "bloque": 48,
+    "solape": 0.5,
+    "fps": 22.417
+  },
+  "control_calidad": {
+    "coh_min": 0.4,
+    "contraste_min": 1.5,
+    "cobertura_min": 0.6,
+    "aceptadas": 15
+  },
+  "unidades": "alturas de camara por segundo; afines, correctas salvo constante global",
+  "referencia": {
+    "Q_cfs": 368.0,
+    "GH_ft": 14.88,
+    "fuente": "USGS 03337000, doi:10.5066/P9VZ6VYM"
+  }
+}
