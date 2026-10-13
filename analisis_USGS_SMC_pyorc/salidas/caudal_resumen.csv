@@ -1,0 +1,12 @@
+concepto,valor,unidad
+Caudal LSPIV pyorc (este notebook),1.4564563560733883,m3/s
+Caudal aforo FlowTracker,1.4362,m3/s
+Diferencia,1.410413318018966,%
+Cuantil 0.05 del PIV,1.353201258969651,m3/s
+Cuantil 0.95 del PIV,1.5753776474693475,m3/s
+Incertidumbre declarada del aforo,4.2,%
+Incertidumbre por la escala (5 px),0.4878048780487805,%
+v_corr usado,0.92,-
+v_corr implicito segun el ADV (verticales medidas),0.9181589121995182,-
+Verticales medidas por el PIV,8.0,de 11
+Verticales rellenadas por log_interp,3.0,de 11

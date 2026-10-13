@@ -1,0 +1,28 @@
+# Configuracion del servicio STIV en la Raspberry Pi.
+#
+# instalar.sh copia este archivo a stiv.conf SOLO la primera vez; despues manda stiv.conf, que es el
+# que se edita (en la Pi: nano ~/stiv/raspberry/stiv.conf) y que las actualizaciones no pisan.
+# Tras cambiarlo:  ./raspberry/stiv.sh reiniciar
+#
+# STIV_ARGS son los argumentos de stiv_directo.py (ademas de --sin-ventana, que pone el servicio):
+#   --camara NOMBRE      myoshoji, kurome o un nombre nuevo para tu camara (crea salidas/NOMBRE/)
+#   --fuente URL         video en directo: rtsp://... de la camara IP
+#   --paso-medida S      segundos entre medidas. 5 descarga la Pi 4 y el CSV crece ~5 veces menos
+#   --vista-cada S       guarda salidas/NOMBRE/ultima_vista.png cada S segundos (para verla desde el PC)
+#
+# Solo puede haber UNA linea STIV_ARGS sin comentar.
+
+# 1) Prueba sin camara ni internet: el video de prueba que trae el paquete, en bucle por el servicio.
+#    Sirve para comprobar que todo arranca y cuanto tarda la Pi; no para medir (ver LEEME.md).
+STIV_ARGS="--camara myoshoji --archivo raspberry/prueba/myoshoji_20s.mp4 --paso-medida 5 --vista-cada 10"
+
+# 2) Directo de YouTube (necesita internet; YouTube puede bloquear la conexion, ver LEEME.md).
+#STIV_ARGS="--camara myoshoji --paso-medida 5 --vista-cada 30"
+
+# 3) Tu camara Hikvision por RTSP. Canal 101 = flujo principal, 102 = secundario.
+#    Antes, configura su cuadrilatero en el PC (LEEME.md, "Usar tu camara").
+#STIV_ARGS="--camara sitio1 --fuente rtsp://usuario:clave@192.168.1.64:554/Streaming/Channels/101 --paso-medida 5 --vista-cada 30"
+
+# Si YouTube bloquea la conexion: exporta cookies.txt desde un navegador con sesion iniciada,
+# copialo a la Pi y descomenta esta linea.
+#STIV_COOKIES=/home/stiv/stiv/raspberry/cookies.txt

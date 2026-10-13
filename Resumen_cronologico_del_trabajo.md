@@ -1,0 +1,529 @@
+# Resumen cronológico del trabajo — medición de caudal a partir de video
+
+Este documento recorre, en orden, todo lo hecho en esta carpeta: cómo empezó, qué algoritmos se
+probaron, con qué variantes, qué se descartó y por qué, y cuánto tarda cada cosa.
+
+**De dónde salen las fechas.** De la fecha de modificación de los archivos que siguen en la carpeta,
+de las fechas que citan los propios documentos (`CLAUDE.md`, la *Comparativa* y la *Guía STIV*) y del
+README de cada caso. Varias carpetas de análisis (Boneyard, Hommerich, Bradano, Arrow y los
+experimentos del canal) **ya no están en este equipo**. Sus fechas se deducen de lo que las rodea y
+van marcadas como *aprox.*
+
+---
+
+## 1. Línea de tiempo resumida
+
+| Fecha | Hito |
+|---|---|
+| 12 jul | Instalación de pyorc y descarga del ejemplo oficial del río Ngwerere |
+| 12–17 jul | Primer notebook exploratorio de Ngwerere con pyorc (LSPIV) y GIF animado de velocidades |
+| 20 jul | Plantilla para Castor River (sin datos todavía); descarga del conjunto USGS del canal Sile Main Canal |
+| 25 jul | **STIV implementado desde cero** como tutorial sobre Ngwerere |
+| 26 jul | Primer intento con la aplicación RIVeR-STIV sobre un video GoPro (abandonado) |
+| 27 jul | Herramientas de estabilización y conversión de video; medidor de recursos |
+| 28–29 jul | RIVeR-STIV aplicado al canal USGS; reescritura de los notebooks SMC con la regla «la referencia se abre una sola vez» |
+| 29 jul | Configuración compartida entre los notebooks LSPIV y STIV del canal USGS |
+| 31 jul | Ejecución final del notebook pyorc del canal USGS; **documento comparativo de los tres métodos** |
+| 1–6 ago *(aprox.)* | Caso Boneyard Creek: triaje de 61 videos, rectificación por punto de fuga, control de calidad por contraste |
+| 6 ago | Herramienta interactiva de geometría para Boneyard; video de velocidad reescrito |
+| 6–9 ago *(aprox.)* | Detección de nivel sobre la regla graduada (tres versiones) |
+| 9 ago | **Guía «STIV y detección de nivel»** (documento Word) |
+| 10 ago | Video de presentación de 38 s (canal + arroyo) |
+| 10–16 ago *(aprox.)* | Casos Hommerich, Bradano y Arrow (experimento de sembrado) |
+| 16 ago | Llega el video de WhatsApp del canal de riego |
+| 16–21 ago | Canal de riego: caso base, árbitro PTV, experimento de alcance, filtro adaptado, modelo de sección completa |
+| 21 ago | Videos «STIV puro» y «sección completa» del canal |
+| 9 oct | Traslado del workspace a este equipo; informe de avances en Word; **STIV en tiempo real sobre cámaras en directo de Tokio** |
+
+---
+
+## 2. Fase 0 — Punto de partida: pyorc y el ejemplo de Ngwerere (12–20 jul)
+
+**Objetivo inicial:** aprender a usar **pyorc** (pyOpenRiverCam), una librería de código abierto que
+mide la velocidad del agua con **LSPIV** (velocimetría por imagen de partículas a gran escala) y
+calcula el caudal sobre una sección transversal.
+
+- Se creó un entorno Python 3.11 (`pyorc_env`) con pyorc 0.9.8. Se clonó también el repositorio
+  oficial (`pyorc_repo/`) como referencia de solo lectura.
+- Se descargó el **ejemplo oficial del río Ngwerere** (Zambia): un video de cámara fija oblicua, 4
+  puntos de control medidos con GPS RTK y una sección transversal levantada en campo.
+- `Notebook_Analisis_Ngwerere.ipynb` (24 celdas) reproduce el flujo de los tutoriales 02, 03 y 04 de
+  pyorc. Pasos: lectura de video → puntos de control → reproyección → PIV con enmascarado de
+  velocidades espurias → caudal sobre el transecto.
+- Se generó `ngwerere/velocidad_animada.gif`, con el campo de velocidades animado sobre la imagen.
+- Más tarde se ordenó en un notebook de pipeline formal en 6 partes, que sirvió de plantilla a todos
+  los demás.
+
+**Resultado:** **0.1672 m³/s frente a los 0.164 m³/s publicados (+1.9 %).**
+
+**Decisión que se mantuvo:** la máscara de ángulo se calcula pero *no* se aplica. Así se reproduce el
+valor publicado; aplicarla llevaría la mediana a ~0.174.
+
+**Lo que se aprendió:**
+
+- La reproducción exacta no es posible: pyorc estima la focal por optimización y la versión actual
+  de `ffpiv` redondea la ventana de 25 a 26 px.
+- En la versión 0.9.8, `get_piv` no es perezoso, al contrario de lo que dice su documentación: ahí se
+  concentran el tiempo y la memoria.
+
+**En paralelo (20 jul):**
+
+- `Prueba_Castor_River.ipynb`: copia de la plantilla de Ngwerere preparada para el río Castor. Nunca
+  llegó a ejecutarse: los datos estaban fuera de la carpeta.
+- Descarga del conjunto USGS del **canal Sile Main Canal** (video 4K desde dron, sección del aforo,
+  resultado PIVlab del propio USGS y aforo con ADV FlowTracker).
+
+---
+
+## 3. Fase 1 — STIV desde cero (25 jul)
+
+`STIV_desde_cero.ipynb` (22 celdas) implementa **STIV** (*Space-Time Image Velocimetry*, Fujita
+et al. 2007) sin librería de velocimetría, sobre el mismo video de Ngwerere, para contrastarlo con
+el LSPIV de pyorc.
+
+- **Idea:** se traza una línea en la dirección del flujo y se apilan los píxeles de esa línea en cada
+  fotograma. Se forma así una imagen espacio-temporal (STI) en la que cada partícula deja una raya
+  inclinada. La pendiente de la raya es la velocidad.
+- **Estimador:** **tensor de estructura**. Es una matriz 2×2 de productos de gradientes; su
+  autovector menor apunta a lo largo de las rayas. Además da gratis la **coherencia** (0–1), que
+  indica si hay una dirección dominante o solo ruido.
+- pyorc se usa aquí **solo** para la geometría (configuración de cámara, proyectar y desproyectar
+  puntos), nunca para la velocidad.
+- Tiene una celda final de validación cruzada contra el PIV de pyorc (`ngwerere_piv.nc`).
+
+Este notebook es el origen de todo el STIV posterior.
+
+---
+
+## 4. Fase 2 — Canal Sile Main Canal con pyorc (26–31 jul)
+
+Es el primer caso **con validación independiente**: un canal de hormigón de 1.83 m de ancho grabado
+desde un dron, con un aforo ADV de **1.4362 m³/s** (incertidumbre declarada del 4.2 %).
+
+### 4.1 Intento con RIVeR-STIV y video GoPro (26 jul) — abandonado
+
+Se probó la aplicación de escritorio **RIVeR-STIV** con su ejemplo GoPro y se empezó un notebook que
+adaptaba Ngwerere a ese caso. Se abandonó: de él solo quedan los puntos marcados con
+`pixel_locator.py`. Los datos del ejemplo siguen dentro de `RIVeR-STIV_1.0/`.
+
+### 4.2 Estabilización (27 jul)
+
+El dron deriva **25.6 px** en 250 fotogramas, y ese movimiento se suma a la velocidad del agua. Hubo
+que estabilizar.
+
+| Variante | Temblor entre fotogramas | Notas |
+|---|---|---|
+| Video original | 0.50 px | — |
+| `estabilizar_video.py` (funciones de pyorc, encadenado fotograma a fotograma) | 0.10 px (×4.9) | ~110 s |
+| `estabilizar_stiv.py` (solo OpenCV, cada fotograma contra el fotograma 0) | **0.02 px (×27)** | ~135 s; el error no se acumula |
+
+**Códec del video intermedio:**
+
+- **mp4v se descartó:** mete 2.1 niveles de gris de error, un 10 % del contraste del trazador.
+- **Se eligió FFV1 sin pérdida:** 1.1 GB, relectura idéntica bit a bit.
+- `convertir_a_mp4.py` genera copias ligeras **solo para mirar**.
+
+**Detalle técnico:** en este entorno OpenCV no puede escribir H.264, así que se usa mp4v como
+alternativa para las copias de visualización.
+
+### 4.3 Notebook pyorc del canal y su evolución
+
+- **Primera versión:**
+  - Escala tomada de las filas 436/1480 de la imagen.
+  - Sección regenerada cada 0.1524 m.
+  - Un **barrido de `v_corr`** (0.85 / 0.90 / 0.95 / 1.00) que imprimía la distancia de cada valor
+    al aforo.
+- **Reescritura (29 jul):**
+  - El barrido se **eliminó**, por ser ajuste contra la referencia.
+  - Todos los valores se fijan a priori y el aforo solo aparece en la Parte 7, una vez, al final.
+  - Las constantes ajustables se agrupan en un recuadro `>>> AJUSTABLE <<<` en cada parte.
+- **Configuración compartida con STIV (29 jul):** misma escala (filas 438/1466 → 1.7790 mm/px), misma
+  sección leída del CSV (1.8026 m²), mismas columnas, mismos 250 fotogramas y mismo coeficiente
+  α = 0.92. Así la comparación mide el algoritmo y no la configuración.
+- **Problema detectado:** la fila de agua inferior figuraba como **1520**, que es el borde inferior de
+  la sombra del muro y cuesta un 5–8 % de escala. Se corrigió a 1466. Dos comprobaciones
+  independientes sitúan el borde real cerca de la fila 1430; queda como cuestión abierta.
+
+**Evolución del resultado:**
+
+| Versión | Caudal | Error |
+|---|---|---|
+| Con error de escala (documento comparativo) | 1.5352 m³/s | +6.9 % |
+| Con la configuración compartida | 1.4507–1.4565 m³/s | **+1.0 a +1.4 %** |
+
+### 4.4 RIVeR-STIV sobre el mismo canal (28–29 jul)
+
+Se procesó el video del canal con RIVeR como tercer método.
+
+- **Resultado:** 1.4293 m³/s (−0.5 %).
+- **Problema:** el perfil oscila entre 0.72 y 1.66 m/s, algo que no es físico en un canal recto. El
+  total acierta por compensación de errores.
+
+### 4.5 Medición de recursos
+
+`benchmark.py` registra tiempo, CPU y memoria por etapa en cada ejecución (ver la sección 13).
+
+---
+
+## 5. Fase 3 — STIV propio sobre el canal USGS (28–31 jul)
+
+El mismo video y la misma referencia, pero con STIV escrito sobre OpenCV y **sin pyorc**.
+
+### Variantes probadas
+
+| Aspecto | Probado | Resultado / decisión |
+|---|---|---|
+| Paso de muestreo `DS` | 1 px por muestra | Rayas a 87°: el error angular pesa 19× más |
+| | Derivado de la velocidad esperada (`DS = v·Δt/escala`) ≈ 18 px | **Elegido**: rayas a ~45°, donde el error es mínimo; poco sensible a fallar la estimación un 30 % |
+| Filtro antialias | Solo a lo largo de la línea | Coherencia 0.97 → 0.87: peor |
+| | Isotrópico, σ = DS/2 | **Elegido**: además suaviza la turbulencia pequeña |
+| Preparación de la STI | Cruda | Pendiente 49.9 (verdad 1.0) |
+| | Restar media temporal | 159: mide el parpadeo |
+| | Restar media temporal y espacial | **1.03: correcto** |
+| Estimador | Tensor global sobre toda la STI | Con un reflejo fijo devuelve −89 % de error **con coherencia 0.74** |
+| | Bloques de 64×64 con 50 % de solape y mediana ponderada por coherencia | **Elegido**: −0.06 % |
+| Detectores automáticos | Línea de agua por movimiento, ángulo de flujo por máxima coherencia, validación sintética de `DS` | **Eliminados** por sobreajustados a un solo video. Sus valores (438/1466, −1.0°, DS 18) quedaron como constantes |
+| Relleno de verticales rechazadas | Ley logarítmica de pared (`K_S = 1 mm`) | 1.3168 m³/s (−8.3 %). Eliminada como maquinaria innecesaria |
+| | Interpolación lineal | **Elegida** (un solo `np.interp`, sin parámetros) |
+| Umbral de calidad | Coherencia ≥ 0.70 | Rechaza siempre las verticales 1 y 11, pegadas a los muros. La 11 medía 1.34–1.40 m/s, más que el centro |
+
+### Evolución del resultado
+
+| Versión | Caudal | Error |
+|---|---|---|
+| Primera | 1.2009 m³/s | −16.4 % |
+| α = 0.85 y relleno lineal apoyado en los ceros de los muros | 1.2221 m³/s | −14.9 % |
+| Fila de agua inferior corregida (1520 → 1463/1466), α = 0.92 y relleno sin apoyarse en los ceros | **1.4475 m³/s** | **+0.8 %** |
+
+### Comparativa final de los tres métodos (`Comparativa_metodos_USGS_SMC.docx`, 31 jul)
+
+| Método | Caudal | Error | Sesgo por vertical | RMSE por vertical | Tiempo / memoria |
+|---|---|---|---|---|---|
+| STIV propio | 1.4475 | +0.8 % | −0.5 % | **0.054 m/s** | 38 s / 0.87 GB |
+| pyorc LSPIV | 1.5352* | +6.9 %* | +5.4 % | 0.056 m/s | 158 s / 15.3 GB |
+| RIVeR-STIV | 1.4293 | −0.5 % | +0.7 % | 0.278 m/s | no medido |
+
+\* Valor de ese documento. Tras corregir la escala, pyorc queda en +1.0 a +1.4 %.
+
+**Conclusión de esa etapa:** el STIV propio es el más equilibrado. RIVeR acierta el total sin
+acertar el perfil, y pyorc es igual de estable pero arrastraba un error de escala.
+
+### Extensión a todo el video: `video_velocidad.py`
+
+Repite el STIV en ventanas deslizantes de 150 fotogramas sobre los **672 fotogramas (22 s)**. Dibuja
+el video original con flechas y el caudal en vivo, sin video intermedio: la estabilización se aplica
+como cambio de coordenadas.
+
+- **Problema nuevo:** con ventanas cortas, la vertical 11 dio dos veces ~7 m/s *con coherencia alta*
+  (una onda estacionaria). Se añadió una cota física `V_MAX = 3 × velocidad esperada`, que actuó en
+  2 de 1155 medidas.
+- **Resultado:** **1.4493 m³/s de mediana** (1.403–1.489), a un 0.1 % de la medida sobre los primeros
+  8 s.
+
+---
+
+## 6. Fase 4 — Boneyard Creek: cámara oblicua sin geometría, y nivel (1–9 ago, aprox.)
+
+Una cámara IP fija del USGS. Se publican 61 videos con su caudal y su nivel, **pero ni una distancia,
+ni sección, ni calibración.**
+
+### 6.1 Triaje
+
+Se clasificaron los 61 videos por brillo, saturación y nitidez. **11 son nocturnos** (infrarrojo,
+desenfocados, gotas en la lente) y no se pueden usar. Entre ellos están los dos caudales más altos
+(446 y 470 cfs).
+
+### 6.2 Geometría: variantes probadas
+
+| Variante | Resultado |
+|---|---|
+| Punto de fuga de las hiladas de los muros + horizonte (RANSAC con los dos muros) | **Usado**: velocidad correcta salvo una constante → unidades de «alturas de cámara/s» |
+| Punto de fuga vertical para medir el giro de la cámara | Falló (los bordes «verticales» eran piedras irregulares) → se supone giro nulo |
+| Corrección de distorsión barriendo k1 | Falló: la métrica premiaba una sobrecorrección absurda (k1 = −0.38) → descartada |
+| Estabilización | No hacía falta: medido 0.02–0.06 px de temblor |
+| **Editor interactivo** `stiv_interactivo.py` (6 ago): se arrastran 4 esquinas de un rectángulo real sobre el agua con el video corriendo | Sustituye al punto de fuga, que se juzgó erróneo; da m/s con un ancho supuesto de ~6 m. La ventana interactiva no se ha probado con una persona |
+
+### 6.3 Control de calidad: la lección del caso
+
+Las estaciones que caen sobre los muros daban **coherencia 0.74–0.76 con velocidad exactamente 0**:
+una estructura quieta es una raya perfecta. **Un filtro de coherencia las aprueba.**
+
+Se añadió un filtro de **contraste temporal**: muro ≤ 0.94 frente a agua ≥ 4.56, un hueco de factor 5.
+Las estaciones rechazadas **no se rellenan**, porque no hay sección.
+
+### 6.4 Resultados
+
+- **Velocidad:** **0.2427 alturas de cámara/s** con 15 de 21 estaciones. Sobre el video entero,
+  0.2428.
+- **Video de velocidad:** rehecho el 6 ago para reproducirse a tiempo real, con dos paneles (original
+  y rectificado).
+
+### 6.5 Detección de nivel (6–9 ago, aprox.)
+
+Es un segundo algoritmo, independiente del de velocidad. Lee el nivel sobre la **regla graduada**
+del muro.
+
+| Versión | Qué hace | Resultado |
+|---|---|---|
+| `velocidad_nivel.py` | Línea recta sobre la regla; busca el cruce al 50 % entre «seca» y «agua» con interpolación subpíxel | 10 lecturas rechazadas por salpicaduras |
+| `velocidad_nivel_chapa.py` | Regla rectificada con un cuadrilátero | 0 rechazos |
+| `velocidad_nivel_curva.py` | Bandas de lados curvos (Bézier), porque la lente de ojo de pez curva la regla | Las graduaciones salen horizontales |
+| Contar marcas visibles (probado) | — | **Descartado**: fluctúa 6× más que la señal |
+
+**Resultado:** nivel detectado en **929 de 929 fotogramas**, con una desviación de 0.60 px, que es la
+oscilación real del agua. El periodo de las graduaciones se mide por autocorrelación (5.37 px por
+marca).
+
+### 6.6 Documentación (9 ago)
+
+`Guia_STIV_y_deteccion_de_nivel.docx` explica desde cero el método, el código y la configuración.
+
+---
+
+## 7. Fase 5 — Video de presentación (10 ago)
+
+`video_ejecutivo/montar_demo.py` monta una pieza de **38 s** en tres bloques: portada, canal y arroyo.
+
+- Rotulado numerado y recorte de la información técnica de los clips.
+- Los puntos de referencia se leen de la configuración real, no se escriben a mano.
+- `--previo` genera los PNG de revisión sin codificar el video.
+
+---
+
+## 8. Fase 6 — Tres conjuntos de datos más: Hommerich, Bradano y Arrow (10–16 ago, aprox.)
+
+### 8.1 Hommerich (río Geul, Países Bajos) — cámara oblicua con calibración completa
+
+- **Datos:** cámara calibrada con distorsión fuerte (k1 = −0.485) y 6 puntos de control RTK.
+- **Geometría:** pose por `solvePnP`, con un error de 0.56 px. Rectificación **píxel a píxel con
+  `remap`** (no con homografía), para poder corregir la lente.
+- **Variante probada:** sección en su posición original frente a sección desplazada 2.5 m aguas
+  abajo. En la posición original, cuatro verticales veían solo el 42–75 % de su línea. Desplazada, el
+  caudal pasa de 12.94 a 13.68 m³/s.
+- **Resultado:** 13 de 16 verticales, **v = 0.943 m/s, Q = 13.68 m³/s** (13.33–13.99). **No hay
+  referencia publicada** para validarlo.
+
+### 8.2 Bradano (Italia) — video ya rectificado, agua casi negra
+
+- **Variante probada:** una sola línea frente a una **banda de 7 líneas** (24 px). La coherencia pasa
+  de 0.47–0.80 a 0.76–0.94.
+- **Control de calidad:** el contraste temporal de Boneyard **no funciona aquí**, porque la grava de
+  la orilla tiene más contraste que el agua. Se usa el brillo (factor 30 entre orilla y agua).
+- **Resultado:** **5 de 7 verticales de referencia, sesgo −3.1 %, correlación 0.996**.
+
+### 8.3 Arrow (Reino Unido) — experimento de sembrado
+
+Dos videos idénticos, uno con trazadores y otro sin ellos, procesados con la **misma configuración**.
+
+- **Sin trazadores:** 0 de 49 estaciones medidas.
+- **Nueve variantes probadas sobre el video sin trazadores:**
+  - DS = 1;
+  - bandas de 30 y 60 px;
+  - filtro paso alto;
+  - una STI por sección entera;
+  - todas combinadas.
+
+  **Todas dan 0 de 49.**
+- **Explicación física (curva de decorrelación):** el patrón sembrado dura ~1 s; el no sembrado no
+  existe ni entre dos fotogramas consecutivos.
+- **Con trazadores:** media 0.389 frente a 0.417 m/s (−6.7 %).
+- **Árbitro:** un PIV independiente coincide con el STIV a 3 cm/s (r = 0.974). La discrepancia de
+  perfil con la referencia apunta a la referencia, no al método.
+
+---
+
+## 9. Fase 7 — Canal de riego grabado con WhatsApp (16–21 ago)
+
+Es el caso con menos información: 81 s a mano desde una alcantarilla, 1024×576 a 661 kb/s, sin
+ninguna medida de campo.
+
+### 9.1 Caso base: `stiv_canal.py`
+
+| Problema | Variante probada | Resultado |
+|---|---|---|
+| La compresión borra la textura y deja bloques fijos | Filtro **top-hat** de 5 px (aísla restos de 2–4 px) | **Hace medible el video** |
+| La mayoría de bloques de la STI no tiene partículas | Mediana ponderada clásica | 0.000 en las 15 estaciones |
+| | Mediana sobre el 15 % de bloques con más señal | **Elegida** (medido: un 11–21 % de bloques tiene partícula) |
+| Ancho de la banda | 3, 11 y 21 líneas | **11 líneas** (con 3, sesgo errático; con 21, nada mejora) |
+| Control de calidad | Brillo o contraste (Bradano, Boneyard) | No discriminan |
+| | **Densidad de trazador con dos umbrales** | Elegida. El umbral superior impide medir el hormigón mojado |
+| Estimador | Tensor y cresta FFT, validados en sintético (1.300 → 1.275 y 1.297) | Tensor como principal, FFT como diagnóstico |
+| Focal supuesta (WhatsApp borra el EXIF) | Barrido entre 600 y 1000 px | La velocidad varía +52 %; **±9 % con lentes realistas**: es la mayor incertidumbre |
+
+**Resultado:** **6 de 15 estaciones** (tercio derecho del canal), mediana **0.0590 alturas de
+cámara/s**.
+
+**Árbitro:** `ptv_arbitro.py` (seguimiento de partículas) construye 562 trayectorias.
+**Correlación 0.984**, sesgo +13 %.
+
+**Video:** 138 ventanas; la mediana coincide al 1.4 %.
+
+### 9.2 Experimento de alcance: `analisis_canal_lejano_stiv/`
+
+¿Hasta dónde mide el método? Se probaron tres bandas de distancia:
+
+| Banda | Paso de muestreo | Resultado |
+|---|---|---|
+| Cerca | 0.23–0.33 px | **Correcto**, 6 de 6 |
+| Media | 0.08 px | Valores erráticos; en video, 20 de 828 ventanas pasan todos los filtros con un valor falso |
+| Lejos | 0.04 px | **20× la velocidad real con coherencia 0.97–0.99** |
+
+**Pruebas:**
+
+- **Decimación temporal:** con 1 de cada 20 fotogramas, la «velocidad» lejana se desploma y cambia
+  de signo. Era aliasing, no celeridad de ondas.
+- **Correlación de conjunto:** un segundo algoritmo confirma que lejos no hay señal.
+
+**Regla obtenida:** el paso de muestreo tiene que ser **≥ 0.2 px de imagen**.
+
+### 9.3 Filtro adaptado: `analisis_canal_filtro_adaptado/`
+
+Último intento sobre la zona lejana: integración coherente sobre toda la ventana (*track-before-
+detect*).
+
+- **Veredicto:** lejos no hay nada. Ahora el resultado negativo está respaldado por controles
+  sintéticos y reales.
+- **Hallazgo:** lo que borra el trazador es la **resolución, no la compresión**. Reducir sin
+  comprimir ya pierde ×111; la compresión añade solo ×1.8.
+- **Errores encontrados por los controles:**
+  - desplazamiento circular de Fourier;
+  - tiempos de integración desiguales;
+  - promediar proyecciones en vez de puntuaciones;
+  - pico buscado sobre la puntuación cruda;
+  - un reescalado olvidado que daba ceros «perfectos».
+- **Hipótesis descartada:** la curtosis como discriminador. La validación sintética la contradijo.
+
+### 9.4 Sección completa con modelo: `analisis_canal_completo_stiv/`
+
+- **STIV mejorado** (29 estaciones):
+  - barras de error por estación;
+  - tres estimadores;
+  - prueba de banda ancha: ensancharla hacia el agua sin trazador **es peligroso**, porque mide a las
+    vecinas.
+- **Modelo Shiono-Knight** ajustado al tercio medido:
+  - Con la pared rígida, χ²red = 1.95. Con borde hidráulico libre, **0.52**: el agua deja de moverse
+    un 6 % antes de la orilla visible.
+  - **Quedarse solo con lo medido sobrestima la velocidad media un 12 %.**
+- **Video:** partículas virtuales en azul y restos reales en amarillo.
+
+### 9.5 Dos presentaciones del canal (21 ago)
+
+| Video | Qué muestra |
+|---|---|
+| `analisis_canal_stiv_puro/` → `stiv_puro.mp4` | **Solo lo medido**: flechas donde hay medida, huecos donde no, y la STI de cada estación con su pendiente |
+| `analisis_canal_seccion_completa/` → `seccion_completa.mp4` | **Flechas en las 15 estaciones**: 6 medidas y 9 deducidas del modelo, dibujadas igual (sin aviso en pantalla, a petición). El CSV y el README indican cuáles son cuáles |
+
+---
+
+## 10. Fase 8 — Traslado y documentación (9 oct)
+
+- El workspace se copió a este equipo. **Faltan aquí** las carpetas de Ngwerere (pipeline), SMC
+  STIV, Boneyard, Hommerich, Bradano, Arrow y los experimentos del canal, así como los datos
+  externos. `pyorc_env` llegó incompleto (sin `Scripts\`).
+- Se redactó `Informe_avances_medicion_caudal.docx`: 12 páginas, sin fechas, para presentar.
+
+---
+
+## 11. Fase 9 — STIV en tiempo real sobre cámaras en directo (9 oct)
+
+`analisis_kurome_directo_stiv/stiv_directo.py` aplica el mismo STIV **en directo** a cámaras de
+vigilancia de ríos de Tokio en YouTube. Tiene su propio entorno `.venv`, porque `pyorc_env` no
+funciona en este equipo.
+
+- **Cómo funciona:** resuelve el flujo con yt-dlp; 9 líneas de búsqueda; STI deslizante de 10 s;
+  medida cada segundo en un hilo aparte (~140 ms).
+- **Interfaz:** ventana con el directo, las flechas y la STI de cada estación. El cuadrilátero se
+  puede editar en vivo.
+- **Problemas resueltos:**
+  - Las cámaras emiten a 15 fps y YouTube duplica cada fotograma. Deduplicar por contenido perdía
+    fotogramas reales, así que se usa la rejilla de tiempos sin deduplicar (validado en sintético).
+  - **El códec congela el agua lisa:** da rayas verticales perfectas a 0.00 m/s, y la primera
+    versión las aceptaba. Se resolvió con un **filtro de actividad entre fotogramas reales**: agua
+    congelada 0.00, agua con textura 0.7–5.6, umbral 0.5.
+  - Coherencia mínima de 0.40, elegida con datos nocturnos en infrarrojo.
+
+**Resultados, con escala supuesta (no validados):**
+
+| Cámara | Condición | Estaciones aceptadas | Velocidad mediana |
+|---|---|---|---|
+| Myoshoji (por defecto) | Día | 6 de 9 | **0.45 m/s** |
+| Kurome | Noche, infrarrojo | 3 de 9 (las del rápido central) | 0.55–0.74 m/s |
+
+---
+
+## 12. Algoritmos probados, en resumen
+
+| Algoritmo | Dónde | Estado |
+|---|---|---|
+| **LSPIV** (correlación cruzada de ventanas, pyorc) | Ngwerere, canal USGS | En uso; preciso pero pesado (~14 GB) |
+| **STIV con tensor de estructura** por bloques | Todos los casos STIV | **Método principal** |
+| STIV con cresta espectral (FFT) | Canal de riego | Diagnóstico secundario |
+| RIVeR-STIV (aplicación de terceros) | Canal USGS | Comparación; perfil no fiable |
+| PIV por correlación de conjunto | Arrow, canal (alcance) | Árbitro independiente |
+| **PTV** (seguimiento de partículas) | Canal de riego | Árbitro independiente |
+| Filtro adaptado / *track-before-detect* (Radon de la STI) | Canal (zona lejana) | Control; confirmó la ausencia de señal |
+| Detección de nivel por cruce al 50 % con interpolación subpíxel | Boneyard | En uso |
+| Estabilización GFTT + Lucas-Kanade contra el fotograma 0 | Canal USGS | En uso |
+| Rectificación por punto de fuga | Boneyard, canal de riego | Usada; en Boneyard sustituida por la manual |
+| Rectificación con 4 puntos (homografía) | Boneyard, cámaras en directo | En uso |
+| Pose completa con distorsión (`solvePnP` + `remap`) | Hommerich | En uso |
+| Modelo Shiono-Knight (distribución lateral) | Canal de riego | Extrapolación, etiquetada como simulación |
+
+---
+
+## 13. Tiempos de procesamiento
+
+| Proceso | Tiempo | Memoria |
+|---|---|---|
+| Estabilizar 250 fotogramas 4K (pyorc / OpenCV) | ~110 s / ~135 s | — |
+| Notebook pyorc del canal USGS (250 fotogramas 4K) | ~160 s | **13.7–15.3 GB** |
+| → abrir video y `get_frames` | 26.8 s | 1.3 GB |
+| → `normalize` + `project` | 53.9 s | 7.5 GB |
+| → `get_piv` (cálculo real) | 75.3 s | 13.7 GB |
+| → máscaras y caudal | ~3 s | 1.4 GB |
+| Notebook STIV del canal USGS (mismo video) | **38 s** (80 s en frío) | **0.87 GB** |
+| → tensor de estructura, 13 estaciones | 0.02–0.03 s | — |
+| STIV del canal USGS sobre el video entero (22 s) | ~9 min | — |
+| Boneyard, video de velocidad | ~2 min | ~0.9 GB |
+| Hommerich, herramienta completa | ~15 s | — |
+| Bradano, notebook / video | ~65 s / ~3.5 min | 268 MB |
+| Arrow, notebook / video | ~50 s / ~45 s | — |
+| Canal de riego: caso base / PTV / video | ~95 s / ~110 s / ~9 min | — |
+| Canal: alcance / video de alcance / video del filtro | ~6 / ~7 / ~4 min | — |
+| Canal: STIV mejorado / video de la sección completa | ~9 / ~7 min | — |
+| STIV en directo | 1 medida por segundo (~140 ms); primera medida a los 10 s | — |
+
+**Lección de costes:** en STIV, el algoritmo es el 0.1 % del tiempo; leer el video es el 99.9 %.
+LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
+
+---
+
+## 14. Resultados finales
+
+| Caso | Método | Resultado | Referencia |
+|---|---|---|---|
+| Ngwerere | pyorc LSPIV | 0.1672 m³/s | +1.9 % del valor publicado |
+| Canal USGS | STIV propio | 1.4475 m³/s (video entero: 1.4493) | **+0.8 %** del aforo ADV |
+| Canal USGS | pyorc LSPIV | 1.4507–1.4565 m³/s | +1.0 a +1.4 % |
+| Canal USGS | RIVeR-STIV | 1.4293 m³/s | −0.5 % (perfil no fiable) |
+| Boneyard | STIV + nivel | 0.2427 alturas/s; nivel en 929/929 fotogramas | Sin sección |
+| Hommerich | STIV métrico | 13.68 m³/s | Sin referencia |
+| Bradano | STIV, banda de 7 líneas | 5 de 7 verticales | Sesgo −3.1 %, r 0.996 |
+| Arrow con trazadores | STIV | 0.389 m/s | −6.7 % |
+| Arrow sin trazadores | STIV, 9 variantes | 0 de 49 | No medible, explicado |
+| Canal de riego | STIV + top-hat | 6 de 15 estaciones, 0.0590 alturas/s | r 0.984 con PTV |
+| Cámaras de Tokio en directo | STIV en tiempo real | 0.45 m/s (Myoshoji, de día) | Escala supuesta, sin referencia |
+
+---
+
+## 15. Reglas de trabajo que salieron del proceso
+
+1. **La referencia se abre una sola vez, al final.** Nada se ajusta después (de ahí que se eliminaran
+   el barrido de `v_corr` y los detectores automáticos sobreajustados).
+2. **La escala lo decide todo:** un 1 % de error en metros por píxel es un 1 % en el caudal.
+3. **La coherencia alta no garantiza una medida buena:** muros, códecs que congelan el agua y zonas
+   lejanas dan coherencia alta con valores falsos. Hace falta un segundo filtro adaptado a cada caso
+   y, si no hay aforo, un segundo algoritmo como árbitro.
+4. **Las orillas fallan en todos los casos:** sombra, poca agua y pocas partículas.
+5. **Sin trazador no hay medida, y lejos de la cámara tampoco:** paso de muestreo ≥ 0.2 px.
+6. **Todo error encontrado lo detectó un control (sintético o real), no la lectura del código.**

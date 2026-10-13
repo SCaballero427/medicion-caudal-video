@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Ordenes para manejar el STIV en la Raspberry Pi. Uso:  ./raspberry/stiv.sh <orden>
+set -uo pipefail
+
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PY="$RAIZ/.venv/bin/python"
+CONF="$RAIZ/raspberry/stiv.conf"
+CLIP="raspberry/prueba/myoshoji_20s.mp4"
+cd "$RAIZ"
+
+ayuda() {
+    cat <<'EOF'
+Uso: ./raspberry/stiv.sh <orden>
+
+  prueba [n]       mide el video de prueba que trae el paquete (sin camara ni internet) y dice si la
+                   Pi da abasto; n = vueltas seguidas (1), para ver si se calienta. Para el servicio.
+  prueba-conf [s]  ejecuta s segundos (60 por defecto) con lo que diga stiv.conf (camara/YouTube)
+  activar          arranque automatico en cada encendido, y lo arranca ya
+  desactivar       quita el arranque automatico y lo para
+  arrancar | parar | reiniciar    (reiniciar: tras cambiar el codigo o stiv.conf)
+  estado           si esta corriendo y sus ultimas lineas
+  registro         lo que imprime, en vivo (Ctrl+C para salir; el programa sigue)
+  medidas          ultimas filas de cada CSV de medidas
+  salud            temperatura, recortes de velocidad por calor/alimentacion, disco y memoria
+  editar           abre stiv.conf con nano (guardar: Ctrl+O Enter, salir: Ctrl+X)
+EOF
+}
+
+servicio_activo() { systemctl is-active --quiet stiv 2>/dev/null; }
+
+parar_si_activo() {
+    if servicio_activo; then
+        echo "(el servicio estaba en marcha: se para durante la prueba; luego: ./raspberry/stiv.sh arrancar)"
+        sudo systemctl stop stiv
+    fi
+}
+
+temperatura() {
+    if command -v vcgencmd > /dev/null; then vcgencmd measure_temp | cut -d= -f2
+    elif [ -r /sys/class/thermal/thermal_zone0/temp ]; then
+        awk '{printf "%.1f'"'"'C\n", $1/1000}' /sys/class/thermal/thermal_zone0/temp
+    else echo "?"; fi
+}
+
+orden="${1:-ayuda}"
+case "$orden" in
+    prueba)
+        [ -f "$CLIP" ] || { echo "falta $CLIP"; exit 1; }
+        parar_si_activo
+        vueltas="${2:-1}"
+        echo "temperatura antes: $(temperatura)"
+        for _ in $(seq "$vueltas"); do
+            "$PY" stiv_directo.py --camara myoshoji --archivo "$CLIP" --sin-ventana --paso-medida 2 --vista-cada 5 \
+                2>&1 | grep -v '^\[h264'
+        done
+        echo "temperatura despues: $(temperatura)"
+        cat <<'EOF'
+
+Como leerlo (ultima linea):
+  - "X s de flujo en Y s de reloj": si Y es MENOR que X, la Pi procesa mas rapido que el tiempo real.
+  - "medida: Z ms": cuanto tarda cada medida; tiene que ser menor que --paso-medida (5 s en stiv.conf).
+  - Las velocidades de este video NO valen como medida (esta recodificado); solo prueban que funciona.
+  Imagen: salidas/myoshoji/ultima_vista.png (traela al PC con traer_resultados.ps1).
+EOF
+        ;;
+    prueba-conf)
+        [ -f "$CONF" ] || { echo "falta $CONF: ejecuta antes raspberry/instalar.sh"; exit 1; }
+        parar_si_activo
+        set -a; . "$CONF"; set +a
+        # shellcheck disable=SC2086  # STIV_ARGS se parte en palabras a proposito
+        "$PY" stiv_directo.py --sin-ventana $STIV_ARGS --duracion "${2:-60}" 2>&1 | grep -v '^\[h264'
+        ;;
+    activar)     sudo systemctl enable --now stiv && echo "activado: arrancara solo en cada encendido" ;;
+    desactivar)  sudo systemctl disable --now stiv && echo "desactivado y parado" ;;
+    arrancar)    sudo systemctl start stiv && echo "arrancado" ;;
+    parar)       sudo systemctl stop stiv && echo "parado" ;;
+    reiniciar)   sudo systemctl restart stiv && echo "reiniciado" ;;
+    estado)      systemctl status stiv --no-pager -n 15 ;;
+    registro)    journalctl -u stiv -f -n 30 ;;
+    medidas)
+        for f in salidas/*/medidas_directo.csv; do
+            [ -f "$f" ] || continue
+            echo "== $f ($(($(wc -l < "$f") - 1)) filas)"; tail -n 9 "$f"
+        done
+        ;;
+    salud)
+        echo "temperatura: $(temperatura)   (por encima de ~80 C la Pi se frena sola)"
+        if command -v vcgencmd > /dev/null; then
+            t="$(vcgencmd get_throttled | cut -d= -f2)"
+            echo "get_throttled: $t   (0x0 = nunca se ha frenado; otro valor = calor o fuente insuficiente)"
+        fi
+        echo; df -h "$RAIZ" | sed 1d | awk '{print "disco: " $4 " libres de " $2 " (" $5 " usado)"}'
+        free -h | awk '/Mem:/ {print "memoria: " $7 " disponibles de " $2}'
+        echo "encendida: $(uptime -p)"
+        echo "servicio: $(systemctl is-active stiv 2>/dev/null) / arranque automatico: $(systemctl is-enabled stiv 2>/dev/null)"
+        ;;
+    editar)      nano "$CONF" && echo "si cambiaste algo: ./raspberry/stiv.sh reiniciar" ;;
+    ayuda|-h|--help) ayuda ;;
+    *) echo "orden desconocida: $orden"; echo; ayuda; exit 1 ;;
+esac

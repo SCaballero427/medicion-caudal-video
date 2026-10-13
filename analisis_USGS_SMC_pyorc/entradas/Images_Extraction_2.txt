@@ -1,0 +1,6 @@
+Filename: SMC_estabilizado_previsualizacion.mp4
+Extracted from: 0 s to 8.3625 s; Total: 8.3625 s
+Resolution: 3840:2160
+@ 30.015 fps; time step: 33.3167 ms
+Grayscale: Yes
+Lens Correction: No

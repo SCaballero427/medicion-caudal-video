@@ -1,0 +1,21 @@
+{
+  "ventana": 360,
+  "paso": 15,
+  "escala_rect": 320.0,
+  "seg_flecha": 10.0,
+  "ciclo_seg": 4.0,
+  "v_color_max": 0.075,
+  "n_estaciones": 15,
+  "n_ventanas": 138,
+  "n_frames": 2429,
+  "fps": 29.97531879884821,
+  "v_mediana_video": 0.05979202270507812,
+  "dimension": [
+    1795,
+    920
+  ],
+  "hereda_de": [
+    "analisis_canal_riego_stiv/stiv_canal.py",
+    "analisis_canal_riego_stiv/video_velocidad.py"
+  ]
+}

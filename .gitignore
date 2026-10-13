@@ -1,0 +1,27 @@
+# Entornos de Python (se recrean con requirements.txt / arrancar.bat)
+pyorc_env/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Videos estabilizados intermedios (FFV1, ~1.1 GB): se regeneran con estabilizar_video.py
+*.mkv
+
+# Temporales de pruebas
+scratch_*.npy
+
+# Binarios de terceros (aplicacion RIVeR-STIV y su ffmpeg): se descargan del sitio de RIVeR
+RIVeR-STIV_1.0/*.exe
+
+# Fotogramas JPG extraidos por RIVeR: se regeneran desde el video
+RIVeR-STIV_1.0/RIVeR_Example/*.jpg
+analisis_USGS_SMC_pyorc/entradas/SMC_estabilizado_previsualizacion_*.jpg
+
+# Datos del USGS descargables (89 MB); el enlace esta en USGS/link.txt
+USGS/SMC_PIV_results.mat
+
+# Sistema
+Thumbs.db
+desktop.ini
+~$*

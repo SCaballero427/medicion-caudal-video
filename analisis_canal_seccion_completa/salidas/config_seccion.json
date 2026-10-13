@@ -1,0 +1,47 @@
+{
+  "ventana": 360,
+  "paso": 15,
+  "escala_rect": 320.0,
+  "seg_flecha": 10.0,
+  "v_color_max": 0.075,
+  "semilla": 20260821,
+  "n_estaciones": 15,
+  "n_ventanas": 138,
+  "n_frames": 2429,
+  "fps": 29.97531879884821,
+  "dimension": [
+    1795,
+    920
+  ],
+  "estaciones_con_medida_directa": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+  ],
+  "factor_escala": {
+    "min": 0.05437540635058953,
+    "max": 0.09140398351966915,
+    "mediana": 0.06836142627960665
+  },
+  "residuos": {
+    "total": 0.21873935666943964,
+    "persistente": 0.17335801713984605,
+    "temporal": 0.13608359856757657,
+    "recorte": [
+      -0.18757849818234337,
+      0.196618907619175
+    ],
+    "r_tiempo": 0.9301641140705423,
+    "r_espacio": 0.07194631123581326
+  },
+  "v_media_seccion": 0.05544229374990942,
+  "forma_de": "analisis_canal_completo_stiv/salidas/config_simulacion.json (pared_rigida)",
+  "hereda_de": [
+    "analisis_canal_riego_stiv/stiv_canal.py",
+    "analisis_canal_riego_stiv/video_velocidad.py",
+    "analisis_canal_completo_stiv/simulacion_canal.py"
+  ]
+}

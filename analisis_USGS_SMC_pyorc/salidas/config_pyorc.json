@@ -1,0 +1,37 @@
+{
+  "video": "entradas\\SMC_estabilizado.mkv",
+  "n_frames": 250,
+  "fps": 30.015,
+  "columna_gcp": 1920,
+  "fila_agua_sup": 438,
+  "fila_agua_inf": 1463,
+  "ancho_canal_m": 1.8288,
+  "escala_m_px": 0.0017841951219512194,
+  "resolucion_m_px": 0.004,
+  "ventana_piv_px": 32,
+  "esquinas_aoi": [
+    [
+      600,
+      450
+    ],
+    [
+      3400,
+      450
+    ],
+    [
+      3400,
+      1453
+    ],
+    [
+      600,
+      1453
+    ]
+  ],
+  "columna_ini": 600,
+  "columna_fin": 3400,
+  "profundidad_m": 1.073,
+  "v_corr": 0.92,
+  "area_seccion_m2": 1.8026399999999998,
+  "x_transecto_m": -0.14372384099847135,
+  "caudal_mediana_m3s": 1.4564563560733883
+}
