@@ -1,0 +1,33 @@
+[
+  {
+    "titulo": "Rio Myoshoji, Kamitakada (Nakano) - directo",
+    "camara": "myoshoji",
+    "url": "https://www.youtube.com/watch?v=huAp4q7lxiQ"
+  },
+  {
+    "titulo": "Rio Kurome, puente Koma (Higashikurume) - directo",
+    "camara": "kurome",
+    "url": "https://www.youtube.com/watch?v=loW9744B-Co"
+  },
+  {
+    "titulo": "Rio Kurome, puente Shimoda (Higashikurume) - directo",
+    "camara": "shimoda",
+    "url": "https://www.youtube.com/watch?v=bpL7MAbdoI8"
+  },
+  {
+    "titulo": "Rio Aki, Todohara (Akiruno) - directo",
+    "camara": "akigawa",
+    "url": "https://www.youtube.com/watch?v=ZRUh9gNk8-g"
+  },
+  {
+    "titulo": "Myoshoji - video de prueba de dia (20 s)",
+    "camara": "myoshoji",
+    "archivo": "raspberry/prueba/myoshoji_20s.mp4",
+    "modo": "dia"
+  },
+  {
+    "titulo": "Myoshoji - video de prueba de noche (90 s)",
+    "camara": "myoshoji",
+    "archivo": "raspberry/prueba/myoshoji_noche_90s.mp4"
+  }
+]

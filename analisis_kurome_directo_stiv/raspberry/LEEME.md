@@ -14,7 +14,8 @@ enciende. Pensado para alguien que nunca ha usado una Raspberry: sigue los pasos
 | `stiv.conf.ejemplo` | Pi | que camara mide el servicio y con que opciones (se copia a `stiv.conf`) |
 | `stiv.service` | Pi | el servicio que lo arranca solo al encender |
 | `requirements-raspberry.txt` | Pi | librerias de Python (OpenCV **sin pantalla**) |
-| `prueba/myoshoji_20s.mp4` | Pi | 20 s de video para probar sin camara y sin internet |
+| `prueba/myoshoji_20s.mp4` | Pi | 20 s de video de dia para probar sin camara y sin internet (va con `--modo dia`: esta en gris) |
+| `prueba/myoshoji_noche_90s.mp4` | Pi | 90 s de noche (motas sobre agua negra, ~0.05 m/s) para probar el modo noche |
 
 Los `.bat` se abren con doble clic. Existen porque Windows bloquea por defecto los scripts `.ps1`.
 
@@ -121,7 +122,8 @@ verdad, cambia la linea `STIV_ARGS` (paso siguiente o seccion "Usar tu camara").
 | `reiniciar` | aplicar cambios de codigo o de `stiv.conf` |
 | `parar` / `arrancar` | parar o arrancar el programa |
 | `activar` / `desactivar` | poner o quitar el arranque automatico |
-| `prueba [n]` | prueba de rendimiento con el video incluido |
+| `prueba [n]` | prueba de rendimiento con el video incluido (de dia) |
+| `prueba-noche` | lo mismo con el video de noche (modo noche, escalas lentas) |
 | `prueba-conf [s]` | ejecutar s segundos (60) con lo que diga `stiv.conf` |
 
 Para **cambiar el codigo**: editalo en el PC, y `subir_a_raspberry.bat -SinInstalar` (copia y

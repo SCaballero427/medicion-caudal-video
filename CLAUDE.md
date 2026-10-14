@@ -1254,7 +1254,7 @@ module globals from it. The folder keeps the first case's name.
 
 | `--camara` | Stream | View | Result (assumed scale) |
 |---|---|---|---|
-| `myoshoji` (default) | `huAp4q7lxiQ`, Myoshoji river, Kamitakada | looks *along* the concrete channel, water moves away (up in image) | daytime: 6 of 9 stations, section median **0.45 m/s** |
+| `myoshoji` (default) | `huAp4q7lxiQ`, Myoshoji river, Kamitakada 5-6 (Nakano) | looks *along* the concrete channel, water moves away (up in image) | daytime: 6 of 9 stations, section median **0.45 m/s** |
 | `kurome` | `loW9744B-Co`, Kurome river, Koma bridge | oblique across, water moves right | night IR: stations 3–5, 0.55–0.74 m/s |
 
 Myoshoji's quad stops just below a small weir: the white water is stationary (correlation locked at
@@ -1276,11 +1276,59 @@ machine** — it has no `Scripts\` (copied from another computer, whose user was
 - `COH_MIN = 0.40` (Boneyard's), chosen *after* seeing night-time IR data (0.3–0.55 on clear
   streaks). STI smoothing stays at σ = 1 row: raising it lowers v 10–15 % on real data but not on
   the synthetic, i.e. coarse near-stationary structure (standing waves) gaining weight.
-- **The scale is an assumption at both cameras** (Kurome 15 × 6 m, Myoshoji 10 × 8 m, quads drawn
+- **The scale is an assumption at both cameras** (Kurome 15 × 6 m, Myoshoji 10 × 8.8 m — the width was
+  measured on an orthophoto on 2026-10-13, 8.8 ± 0.7 m crown to crown; the length is still assumed, a
+  camera model gave 9.6 m (7.9–13.4) but failed an independent check against a pedestrian's height —, quads drawn
   by eye; no published widths found for either site) and the screen says so while
   `escala_verificada` is false. Nothing validates any of the numbers.
 - Open item: in one short daytime Kurome run, its station 8 (over the near-bank vegetation) passed
   QC at 1.18 m/s, just under `V_MAX_FISICA` = 1.2. Not investigated.
+- **Duplicated frames, wall bubbles, `shimoda` (2026-10-13, later).** The fast STI is now built
+  from **one row per real camera frame** (the mean of each YouTube duplicate pair; `Geometria.k_real`,
+  `dt` = 1/15 s, DS doubles). With duplicates the STI is a staircase and the tensor overestimates
+  once streaks exceed ~1.5 samples/row (synthetic: slope 2.5 -> 3.15, +26 %); Kurome by day was
+  10-20 % high (0.94 -> 0.85 m/s), Myoshoji day clip 0.52 -> 0.50. By day, a station that fails is
+  **retried with the night speck enhancement** (`Buffers` has a second channel; `medir(...,
+  buffers_motas)`): Myoshoji stations 6-8 (shadowed water with drifting bubbles by the right wall)
+  now measure 0.02-0.05 m/s at the 60 s scale, 9/9 stations after 70 s; console prints R/M/L in
+  capitals and the CSV `modo` reads `dia+motas`. Myoshoji lines 6 -> 9 m. New preset `shimoda`
+  (`bpL7MAbdoI8`): water flows right-to-left *toward* the bridge, assumed 12 x 5 m, v_esperada 0.6;
+  on a rainy day only the near half (stations 4-8, ~1.35 m/s) resolves at 15 fps.
+  Preset `akigawa` (`ZRUh9gNk8-g`, Aki river at Todohara) was added on request but **does not
+  measure**: heavily compressed stream, codec-frozen water and standing waves keep coherence at
+  0.1-0.36 everywhere (tried sub-zones, sampling, speck mode, a temporal high-pass: max 0.37).
+  COH_MIN was deliberately not lowered for it.
+  **Directional filter** (`filtro_direccional`, per camera, on only for `shimoda`): zeroes the STI
+  spectrum quadrants of upstream-moving patterns. Fast water (1-1.5 m/s) with near-regular ripples
+  aliased at 15 fps into a cross-hatched STI (real "\\" + stroboscopic "/"), giving opposite signs at
+  neighbouring stations; with the filter Shimoda goes from 0-6 to 156-162 accepted station-measures
+  in 90 s, median 0.94-1.00 m/s invariant to DS 2-4 px (an artifact would track DS). It imposes the
+  flow sense, so it is not global: on Kurome it would lower 0.86 -> 0.66 m/s (closer to an ensemble
+  correlation, 0.72), Myoshoji -7-10 %, and on `akigawa` it "measures" ~0.7 m/s that drifts +20 %
+  with DS -- not trusted.
+- **Switching sources (2026-10-13).** `fuentes.json` lists streams and recorded videos (camera
+  name + `url` or `archivo`, optional `modo` defaulting to auto, optional per-camera `ajustes`).
+  `arrancar.bat` with no arguments shows a console menu (`--elegir`); in the window `c` = next,
+  `1`-`9` = that entry. `main()` loops over `ejecutar()`, which returns the requested index; the
+  reader and measurer threads are stopped and drained on every switch (checked: no threads
+  accumulate), the window is reused, and a source that fails to open falls back to the previous one.
+  Without the file (the Pi) the list is `CAMARAS`. If the CSV is locked (Excel), it writes to a
+  dated CSV instead of crashing.
+- **Night and slow water (2026-10-13).** At night Myoshoji measured nothing although debris was
+  visibly moving: the water ran ~10x slower than at calibration (~0.05 m/s, **0.1 px per real
+  frame**, confirmed by long-lag ensemble correlation with no STIV), so the 10 s frame-by-frame STI
+  saw near-vertical streaks, frame-to-frame activity was 0 ("sin textura") and lamp-glare sparkles
+  read 5–11 m/s. Fix: **three time scales in cascade** (`ESCALAS`: 10 s per frame, 30 s at
+  0.133 s/row, 60 s at 0.5 s/row; slow rows are averages) — each station takes the *first* scale
+  with |slope| ≥ `P_MIN` 0.3 samples/row, descends only on "too slow"/"no texture", and slower scales
+  reject |slope| > `P_MAX` 2.5 as `ambiguo` (possible aliasing) — plus an **automatic night mode**
+  (`--modo auto`: IR camera ⇒ saturation exactly 0) with a 9 px top-hat, temporal-median
+  subtraction and **glare exclusion** (median brightness > 60; water 4–41, lamps 59–255). Selection
+  is by streak angle, never by coherence. Daytime numbers unchanged (test clip identical, all fast
+  scale). Live at night: 5–6 of 9 stations, section median 0.056–0.067 m/s, mostly at the 30 s
+  scale. The window now shows **two views** (live + rectified plan view, flow left→right, 1 m scale
+  bar) and arrows whose duration adapts so the median is ~1 m. The day test clip is stored grey,
+  so it needs `--modo dia`; `raspberry/prueba/myoshoji_noche_90s.mp4` is the night recording.
 
 ### `raspberry/` — the same tool on a Raspberry Pi 4B, headless
 

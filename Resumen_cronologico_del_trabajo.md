@@ -38,6 +38,10 @@ van marcadas como *aprox.*
 | 12 oct | **Prueba en Docker**: Raspberry emulada (Debian 13 ARM64 con systemd y SSH) y cámara RTSP simulada; 4 fallos encontrados y corregidos |
 | 12 oct | Repositorio privado en GitHub con todo el workspace |
 | 13 oct | Prueba en Docker convertida en **banco de pruebas reutilizable** (`pruebas_docker/`): Pi falsa + servidor RTSP + cámara simulada, con un solo script |
+| 13 oct | Directo de noche: **escalas de tiempo en cascada y modo noche**; ventana con **dos vistas** (directo y rectificada) |
+| 13 oct | **`fuentes.json`**: menú y teclas para cambiar entre directos y videos; corregido el **sesgo por fotogramas duplicados** (hasta +26 %) |
+| 13 oct | Burbujas junto al muro del Myoshoji medidas con el **reintento de motas** (9 de 9); ancho del Myoshoji medido en ortofoto (8.8 m) |
+| 13 oct | Cámaras nuevas: **Shimoda** (con **filtro direccional** contra el aliasing estroboscópico) y **Akigawa** (añadida, no mide) |
 
 ---
 
@@ -574,7 +578,231 @@ El video estabilizado de 1.1 GB va por Git LFS, porque supera el límite de 100 
 
 ---
 
-## 13. Algoritmos probados, en resumen
+## 13. Fase 11 — Cámaras en directo: noche, dos vistas, varias fuentes y cámaras nuevas (13 oct)
+
+Todo en `analisis_kurome_directo_stiv/stiv_directo.py`. Cada cambio se probó sobre **grabaciones sin
+pérdida de los propios directos** (FFV1, 60–200 s), no solo en directo, para poder repetir la misma
+prueba con y sin el cambio. Las pruebas se hicieron en una copia aparte, para no mezclar sus
+medidas con las del usuario.
+
+### 13.1 De noche no detectaba movimiento
+
+**Síntoma:** de noche el Myoshoji no medía ninguna estación, aunque a simple vista se veían basura
+y burbujas avanzando.
+
+**Diagnóstico:** de noche el agua iba unas **10 veces más despacio** que de día: ~0.05 m/s, es decir
+**0.1 px por fotograma real**. Se confirmó con una correlación de conjunto a desfases largos, sin
+STIV. Con el STI de 10 s fotograma a fotograma:
+
+- las estelas salían casi verticales;
+- la actividad entre fotogramas era 0, y todo quedaba como «sin textura»;
+- los destellos de las farolas sobre las ondas daban falsos 5–11 m/s.
+
+**Ajustes:**
+
+- **Tres escalas de tiempo en cascada:** 10 s fotograma a fotograma, 30 s con filas cada 0.133 s y
+  60 s con filas cada 0.5 s. Las filas lentas son promedios, que hacen de antialias temporal.
+  - Cada estación usa la **primera** escala cuya pendiente sea de al menos 0.3 muestras por fila.
+  - En las escalas lentas, una pendiente mayor de 2.5 se rechaza como «ambiguo»: es agua rápida
+    que esa escala no puede resolver.
+  - La elección es por el ángulo de la estela, nunca por la coherencia.
+- **Modo noche automático:** se activa cuando la cámara pasa a infrarrojo, con saturación exactamente
+  0. Aplica tres pasos:
+  - un top-hat de 9 px, que deja solo las motas brillantes;
+  - resta la mediana temporal de cada posición, para quitar lo que no se mueve;
+  - **excluye los reflejos de farola**: posiciones con brillo mediano mayor de 60 (el agua da 4–41
+    y las farolas 59–255).
+
+**Resultado:**
+
+- **De día no cambia nada:** el clip de prueba da los mismos números y todas las estaciones se miden
+  en la escala rápida.
+- **De noche, en directo:** 5–6 de 9 estaciones desde t = 30 s, mediana **0.056–0.067 m/s**, casi
+  todas en la escala de 30 s.
+- Se añadió el clip nocturno `raspberry/prueba/myoshoji_noche_90s.mp4` (orden `stiv.sh
+  prueba-noche`).
+- El clip de día está guardado en gris, así que hay que forzar `--modo dia` con él.
+
+### 13.2 Dos vistas en la ventana
+
+**Ajustes:**
+
+- La ventana muestra el directo y la **vista rectificada en planta**, una junto a la otra. En la
+  vista rectificada el flujo va de izquierda a derecha y hay una barra de 1 m.
+- Las dos vistas llevan las líneas, las flechas y los valores.
+- La duración de las flechas se adapta (entre 2 y 60 s de recorrido) para que la flecha mediana
+  mida ~1 m. Con agua a 0.05 m/s, una flecha de 2 s medía 10 cm y no se veía.
+
+### 13.3 Cambiar entre directos y videos
+
+**Ajustes:**
+
+- **`fuentes.json`** guarda la lista de fuentes. Cada entrada lleva:
+  - título y cámara;
+  - `url` (directo) o `archivo` (video grabado);
+  - `modo`, opcional, `auto` por defecto;
+  - `ajustes`, opcional, para cambiar valores por cámara.
+- **Menú en la consola:** `arrancar.bat` sin argumentos lo muestra (`--elegir`).
+- **Teclas en la ventana:** `c` pasa a la siguiente fuente y `1`–`9` van a una concreta. Cada fuente
+  escribe en su carpeta; si la nueva no abre, se vuelve a la anterior.
+- Sin `fuentes.json`, por ejemplo en la Raspberry, la lista son las cámaras definidas en el código.
+
+**Prueba:** se simularon las pulsaciones de teclas, pasando por cuatro fuentes con la ventana
+abierta. Al cambiar, los hilos de lectura y de medida se cierran y no se acumulan.
+
+**Fallos encontrados:**
+
+- El clip nocturno heredaba el `--modo dia` de la línea de comandos. Ahora una entrada sin `modo`
+  usa siempre `auto`.
+- Con el CSV abierto en Excel, el programa abortaba al arrancar (`PermissionError` al apartar el CSV
+  de columnas antiguas). Ahora escribe en un CSV con fecha y avisa.
+
+### 13.4 Fotogramas duplicados: un sesgo de hasta el 26 %
+
+**Diagnóstico:** YouTube repite cada fotograma de la cámara (15 fps convertidos en 30), y el STI rápido
+se construía con todos. Con duplicados el STI es una escalera, y el tensor sobreestima en cuanto la
+estela avanza más de ~1.5 muestras por fila. Se probó con un STI sintético de pendiente conocida:
+
+| Pendiente real | Sin duplicados | Con duplicados |
+|---|---|---|
+| 1.0 | 1.000 | 1.000 |
+| 2.0 | 2.015 | **2.136 (+7 %)** |
+| 2.5 | 2.524 | **3.154 (+26 %, coherencia 0.54)** |
+| 3.0 | 3.030 | **5.555** |
+
+**Ajuste:** el STI rápido usa **una fila por fotograma real**, el promedio de cada par de duplicados.
+DS se duplica y queda más lejos del límite de aliasing (Myoshoji: de 0.32 a 0.65 px).
+
+**Resultado:**
+
+- **Kurome de día:** pasa de ~0.94 a ~0.85 m/s; antes salía inflado un 10–20 %. Una correlación
+  independiente da 0.72–1.0 m/s en las estaciones 5–8. En las 1–2 el STIV queda todavía un 25 % por
+  encima.
+- **Clip de día del Myoshoji:** de 0.52 a 0.49–0.50 m/s.
+- **Noche:** no cambia, porque se mide en las escalas lentas.
+- Subir `v_esperada` del Kurome a 0.9 no sirvió: el muestreo pasaba a 4 px y la textura desaparecía.
+  Se dejó en 0.4.
+
+### 13.5 Burbujas junto al muro del Myoshoji
+
+**Síntoma:** a la derecha de la imagen se veían burbujas moviéndose, pero las estaciones 6–8 nunca
+medían.
+
+**Diagnóstico:**
+
+- Un mapa de las motas que pasan por cada píxel mostró trayectorias de burbujas justo sobre las
+  líneas 6–8.
+- Es agua en sombra, casi quieta, junto al muro derecho, con burbujas que derivan despacio.
+- El proceso de día las diluye: la actividad de la banda sale ~0 y la coherencia 0.14–0.33.
+
+**Ajustes:**
+
+- **De día, una estación que falla se reintenta con el realce de motas del modo noche.** Las burbujas
+  dan 0.02–0.05 m/s con coherencia 0.7–0.9, igual en dos escalas, y se miden en la de 60 s.
+- «Ambiguo» no se reintenta: es agua rápida, no falta de textura.
+- La consola marca esas medidas con R/M/L en mayúsculas y el CSV con `dia+motas`.
+- Las líneas del Myoshoji pasan de 6 a 9 m, para llegar a la parte cercana a la cámara. Por sí solo
+  aportó poco: de 236 a 251 estaciones-medida en 200 s.
+
+**Resultado en 200 s grabados:** **9 de 9 estaciones desde t ≈ 70 s** (antes 6). La estación 6, en el
+borde entre el agua rápida y la quieta, da a veces valores sueltos. La medida pasa de ~0.35 a ~0.7 s
+en el PC.
+
+### 13.6 Escala del Myoshoji: el ancho sí, el largo no
+
+Otro agente localizó la cámara: estación **上高田上** (Kamitakada 5-6, Nakano; 35.717608,
+139.678653). En ortofoto midió:
+
+- un **ancho de 8.8 m ± 0.7** de coronación a coronación, comprobado con una pista de tenis (error
+  del 0.4 %);
+- el fin de las gradas de la orilla izquierda a +7 m de la cámara.
+
+**Ajustes y resultados:**
+
+- **`ancho_m` pasa de 8.0 a 8.8.** Las velocidades no cambian (mediana 0.46–0.50 m/s), porque se
+  miden a lo largo del flujo.
+- **El «salto» del fondo no es un salto:** de día es una zona de piedras con agua blanca quieta, y de
+  noche el reflejo de una farola.
+- **El largo se intentó con un modelo de cámara.** Datos: punto de fuga de los muros, los 8.8 m,
+  coronación del muro derecho y gradas a +7 m.
+  - Resultado: cámara a 8.4 m sobre el agua, muro de 6.0 m y **cuadrilátero de 9.6 m** (7.9–13.4
+    según los supuestos).
+  - **No pasó una comprobación independiente:** una persona en el paseo mide 76 px y el modelo la
+    predecía de 102–177 px. El largo se dejó en 10 m supuestos.
+- **Discrepancia con el informe:** por la imagen, la cámara parece estar en la orilla izquierda
+  (este), no en la derecha. El muro izquierdo se ve de canto, el derecho de frente y las gradas junto
+  a la cámara.
+
+### 13.7 Cámara nueva: Shimoda (río Kurome)
+
+**Configuración inicial** (`shimoda`, `youtube.com/watch?v=bpL7MAbdoI8`):
+
+- **El agua va hacia el puente.** El agua blanca bajo el puente es un rápido aguas abajo; lo
+  confirmaron el STI y una correlación 2D. La primera versión del cuadrilátero lo tenía al revés y
+  daba velocidades negativas.
+- Escala supuesta de 12 × 5 m.
+- Con `v_esperada` 0.4, todo caía por encima del tope de 1.2 m/s; se subió a 0.6.
+- **Resultado:** en directo, con lluvia, medía las estaciones 4–8, a ~1.35 m/s.
+
+**Problema a las 18 h: signos opuestos en estaciones vecinas** (+3.1 / −2.5 / −3.8 m/s), con casi todo
+«ambiguo» o «v_max».
+
+- **Diagnóstico:** el agua iba a 1–1.5 m/s con ondas casi regulares. A 15 fps, cada onda avanza entre
+  dos fotogramas más de media longitud de onda. El STI muestra una **trama cruzada**: las estelas
+  reales («\») y su imagen estroboscópica («/»), como las ruedas que en el cine giran al revés.
+- **Ajuste: filtro direccional.** En el espectro 2D del STI se anulan los cuadrantes de lo que avanza
+  aguas arriba. El sentido aguas abajo lo fija el cuadrilátero.
+- **Resultado:** en 90 s grabados, de 0–6 a **156–162 estaciones-medida aceptadas** (9 de 9 casi
+  siempre), con mediana 0.94–1.00 m/s.
+- **Control de que el filtro no fabrica la medida:** con DS de 2, 3 y 4 px el resultado apenas
+  cambia. Un artefacto seguiría al muestreo, porque el ruido filtrado tiende a 45°.
+- **Por qué es opcional por cámara** (`filtro_direccional`, solo en el Shimoda): impone el sentido
+  del flujo y cambia los números de cámaras que ya funcionaban.
+  - Kurome: de 0.86 a 0.66 m/s, más cerca de una correlación independiente (0.72).
+  - Myoshoji: −7–10 %.
+  - Akigawa: «mediría» ~0.7 m/s, pero el valor sube un 20 % con el muestreo.
+
+**Incidencia posterior:** el usuario vio otra vez trama cruzada y velocidades negativas.
+
+- Su CSV (21:15–22:34) tenía 1955 velocidades negativas y coherencia 0.12–0.40. Con el filtro eso es
+  imposible.
+- En el mismo minuto, con el código actual, el directo daba **9 de 9 a ~1.1 m/s**, con coherencia
+  0.42–0.64.
+- **Causa probable:** un proceso abierto antes del cambio. **Cambiar de fuente con las teclas no
+  recarga el código.**
+- **Ajuste:** la consola muestra la versión (fecha del archivo) al arrancar, y la cabecera indica
+  «filtro direccional» cuando está activo.
+
+### 13.8 Cámara nueva: Akigawa (río Aki), que no mide
+
+Cámara `akigawa` (`youtube.com/watch?v=ZRUh9gNk8-g`, estación 留原 en Akiruno): un río ancho visto de
+lado, con el agua de izquierda a derecha, hacia el puente. **Se añadió como fuente, pero no mide:**
+
+- El video está muy comprimido: entre fotogramas reales cambia solo 0.3–0.6 niveles de gris.
+- El códec congela trozos de agua, y lo que se mueve con contraste son olas fijas del rápido.
+- La coherencia se queda en 0.1–0.36, con un umbral de 0.40. Se probó:
+  - dos subzonas;
+  - muestreos de 0.9 a 2.5 px;
+  - el proceso de motas;
+  - un paso alto temporal, que llegó como mucho a 0.37.
+- **No se bajó el umbral:** aceptaría medidas falsas.
+- El filtro direccional la haría «medir», pero el valor sigue al muestreo; no se activó.
+
+### 13.9 Ajustes por cámara, en resumen
+
+| Cámara | Ajustes propios | Ajustes generales que le afectan | Estado |
+|---|---|---|---|
+| **Myoshoji** | Líneas de 6 a 9 m; ancho 8.8 m (ortofoto) | Modo noche y escalas lentas; una fila por fotograma real; reintento con motas (estaciones 6–8) | Día: 9 de 9 tras ~70 s, ~0.48 m/s. Noche: 5–6 de 9, ~0.06 m/s |
+| **Kurome** (puente Koma) | Ninguno (`v_esperada` 0.9 probado y descartado) | Una fila por fotograma real (−10–20 %) | Día: 5–6 de 9, ~0.85 m/s |
+| **Shimoda** | Cuadrilátero invertido (agua hacia el puente); `v_esperada` 0.6; banda 0.35 m; **filtro direccional** | Una fila por fotograma real | 9 de 9, ~1.0–1.1 m/s con el río crecido |
+| **Akigawa** | Cuadrilátero sobre todo el tramo; `v_esperada` 1.0 | — | No mide (códec y olas fijas) |
+
+Todas las escalas son **supuestas** salvo el ancho del Myoshoji. Ninguna velocidad está validada en
+campo.
+
+---
+
+## 14. Algoritmos probados, en resumen
 
 | Algoritmo | Dónde | Estado |
 |---|---|---|
@@ -591,10 +819,15 @@ El video estabilizado de 1.1 GB va por Git LFS, porque supera el límite de 100 
 | Rectificación con 4 puntos (homografía) | Boneyard, cámaras en directo | En uso |
 | Pose completa con distorsión (`solvePnP` + `remap`) | Hommerich | En uso |
 | Modelo Shiono-Knight (distribución lateral) | Canal de riego | Extrapolación, etiquetada como simulación |
+| STIV en **cascada de escalas de tiempo** (10 / 30 / 60 s) | Cámaras en directo | En uso; agua lenta y de noche |
+| Realce de motas (top-hat + resta de la mediana temporal + exclusión de reflejos) | Cámaras en directo | En uso de noche y como reintento de día |
+| **Filtro direccional** en el espectro 2D del STI | Shimoda | En uso, solo por cámara; validado por invariancia al muestreo |
+| Paso alto temporal en el STI | Akigawa | Probado; insuficiente (coherencia 0.37) |
+| Modelo de cámara (punto de fuga + ancho + referencia a lo largo) | Myoshoji | Probado; no pasó la comprobación con una persona |
 
 ---
 
-## 14. Tiempos de procesamiento
+## 15. Tiempos de procesamiento
 
 | Proceso | Tiempo | Memoria |
 |---|---|---|
@@ -620,13 +853,17 @@ El video estabilizado de 1.1 GB va por Git LFS, porque supera el límite de 100 
 | Instalación en la Raspberry emulada en Docker | ~8 min (emulado) | — |
 | Actualizar solo el código en la Pi (`-SinInstalar`) | 6 s | — |
 | Reconexión RTSP tras un corte | Vuelve a medir a los 10 s | — |
+| Medida en directo con tres escalas (noche) | ~0.3 s por medida en el PC | — |
+| Medida de día con reintento de motas (Myoshoji) | ~0.7 s por medida en el PC (antes ~0.35) | — |
+| Medida del Shimoda con filtro direccional | 0.15–0.22 s por medida | — |
+| Primera medida en estaciones lentas (escala de 60 s) | ~60–70 s tras arrancar | — |
 
 **Lección de costes:** en STIV, el algoritmo es el 0.1 % del tiempo; leer el video es el 99.9 %.
 LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 
 ---
 
-## 15. Resultados finales
+## 16. Resultados finales
 
 | Caso | Método | Resultado | Referencia |
 |---|---|---|---|
@@ -641,11 +878,15 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 | Arrow sin trazadores | STIV, 9 variantes | 0 de 49 | No medible, explicado |
 | Canal de riego | STIV + top-hat | 6 de 15 estaciones, 0.0590 alturas/s | r 0.984 con PTV |
 | Cámaras de Tokio en directo | STIV en tiempo real | 0.45 m/s (Myoshoji, de día) | Escala supuesta, sin referencia |
+| Myoshoji tras los ajustes del 13 oct | STIV + escalas lentas + motas | Día: 9 de 9, ~0.48 m/s; noche: 5–6 de 9, ~0.06 m/s | Ancho medido (8.8 m), largo supuesto |
+| Kurome tras corregir los duplicados | STIV | 5–6 de 9, ~0.85 m/s (antes ~0.94) | Correlación independiente: 0.72–1.0 m/s (estaciones 5–8) |
+| Shimoda | STIV + filtro direccional | 9 de 9, ~1.0–1.1 m/s (río crecido) | Escala supuesta; invariante al muestreo |
+| Akigawa | STIV, varias variantes | 0 de 9 | No medible con este video, explicado |
 | Raspberry Pi emulada en Docker | Mismo STIV, sin pantalla, como servicio | Mismos números que en el PC; reconecta sola | Velocidad real de la Pi sin medir |
 
 ---
 
-## 16. Reglas de trabajo que salieron del proceso
+## 17. Reglas de trabajo que salieron del proceso
 
 1. **La referencia se abre una sola vez, al final.** Nada se ajusta después (de ahí que se eliminaran
    el barrido de `v_corr` y los detectores automáticos sobreajustados).
@@ -658,3 +899,12 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 6. **Todo error encontrado lo detectó un control (sintético o real), no la lectura del código.**
 7. **Probar el despliegue antes de tener el hardware:** la Raspberry emulada en Docker y la cámara RTSP
    simulada sacaron cuatro fallos que en el campo habrían dejado el equipo sin medir.
+8. **Saber cómo llega el video antes de medir:** fps real de la cámara, fotogramas duplicados y
+   compresión. Los duplicados de YouTube sesgaban hasta un 26 % sin que nada lo indicara.
+9. **El tiempo también tiene aliasing:** con agua rápida y ondas regulares, a 15 fps aparece un
+   movimiento falso hacia atrás. Los síntomas son una trama cruzada en el STI y signos opuestos en
+   estaciones vecinas.
+10. **Un filtro o un realce no debe fabricar la medida:** se comprueba cambiando el muestreo. Si el
+    resultado lo sigue, es un artefacto.
+11. **Cambiar de fuente no recarga el código:** tras una actualización hay que cerrar y volver a abrir
+    el programa. La versión se muestra al arrancar.

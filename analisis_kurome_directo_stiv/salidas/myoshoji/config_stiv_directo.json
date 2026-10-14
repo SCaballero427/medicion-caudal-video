@@ -20,7 +20,7 @@
     ]
   ],
   "largo_m": 10.0,
-  "ancho_m": 8.0,
+  "ancho_m": 8.8,
   "escala_verificada": false,
   "parametros": {
     "V_ESPERADA": 0.3,
@@ -38,5 +38,6 @@
     "N_BLOQUES_MIN": 6,
     "COH_MIN": 0.4,
     "V_MAX_FISICA": 0.8999999999999999
-  }
+  },
+  "nota_escala": "ancho 8.8 m +-0.7 de coronacion a coronacion, medido en ortofoto (Google/Airbus) el 2026-10-13; puede ser hasta ~1.4 m menor al nivel del agua si el muro derecho esta en talud o hay berma. Largo 10 m sigue SUPUESTO: un modelo de camara con el fin de las gradas a +7 m da 9.6 m (7.9-13.4), pero no pasa una comprobacion independiente."
 }

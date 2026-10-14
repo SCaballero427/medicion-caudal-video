@@ -9,12 +9,14 @@
 #   --fuente URL         video en directo: rtsp://... de la camara IP
 #   --paso-medida S      segundos entre medidas. 5 descarga la Pi 4 y el CSV crece ~5 veces menos
 #   --vista-cada S       guarda salidas/NOMBRE/ultima_vista.png cada S segundos (para verla desde el PC)
+#   --modo auto|dia|noche  auto (por defecto): noche cuando la camara pasa a blanco y negro (IR).
+#                        El video de prueba de dia esta guardado en gris: con el hay que poner --modo dia.
 #
 # Solo puede haber UNA linea STIV_ARGS sin comentar.
 
 # 1) Prueba sin camara ni internet: el video de prueba que trae el paquete, en bucle por el servicio.
 #    Sirve para comprobar que todo arranca y cuanto tarda la Pi; no para medir (ver LEEME.md).
-STIV_ARGS="--camara myoshoji --archivo raspberry/prueba/myoshoji_20s.mp4 --paso-medida 5 --vista-cada 10"
+STIV_ARGS="--camara myoshoji --archivo raspberry/prueba/myoshoji_20s.mp4 --modo dia --paso-medida 5 --vista-cada 10"
 
 # 2) Directo de YouTube (necesita internet; YouTube puede bloquear la conexion, ver LEEME.md).
 #STIV_ARGS="--camara myoshoji --paso-medida 5 --vista-cada 30"

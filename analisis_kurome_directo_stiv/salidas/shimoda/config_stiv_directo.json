@@ -1,0 +1,62 @@
+{
+  "camara": "shimoda",
+  "url": "https://www.youtube.com/watch?v=bpL7MAbdoI8",
+  "etiqueta": "Rio Kurome, puente Shimoda (Higashikurume) - directo Tokyo Suibou",
+  "cuadrilatero_px": [
+    [
+      1040,
+      440
+    ],
+    [
+      448,
+      346
+    ],
+    [
+      480,
+      480
+    ],
+    [
+      1080,
+      600
+    ]
+  ],
+  "largo_m": 12.0,
+  "ancho_m": 5.0,
+  "escala_verificada": false,
+  "parametros": {
+    "V_ESPERADA": 0.6,
+    "N_ESTACIONES": 9,
+    "MARGEN_ORILLA": 0.06,
+    "LARGO_LINEA_M": 9.0,
+    "CENTRO_LINEA": 0.5,
+    "LINEAS_BANDA": 7,
+    "ANCHO_BANDA_M": 0.35,
+    "VENTANA_S": 10.0,
+    "PASO_MEDIDA_S": 1.0,
+    "LADO_BLOQUE": 48,
+    "FPS_CAMARA": 15.0,
+    "ACTIVIDAD_MIN": 0.5,
+    "N_BLOQUES_MIN": 6,
+    "COH_MIN": 0.4,
+    "V_MAX_FISICA": 1.7999999999999998,
+    "ESCALAS": [
+      [
+        0.0,
+        10.0
+      ],
+      [
+        0.133,
+        30.0
+      ],
+      [
+        0.5,
+        60.0
+      ]
+    ],
+    "P_MIN": 0.3,
+    "P_MAX": 2.5,
+    "NUCLEO_TOPHAT": 9,
+    "BRILLO_REFLEJO": 60.0,
+    "SATURACION_NOCHE": 1.5
+  }
+}

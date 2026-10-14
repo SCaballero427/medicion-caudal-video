@@ -35,6 +35,26 @@
     "ACTIVIDAD_MIN": 0.5,
     "N_BLOQUES_MIN": 6,
     "COH_MIN": 0.4,
-    "V_MAX_FISICA": 1.2000000000000002
-  }
+    "V_MAX_FISICA": 1.2000000000000002,
+    "ESCALAS": [
+      [
+        0.0,
+        10.0
+      ],
+      [
+        0.133,
+        30.0
+      ],
+      [
+        0.5,
+        60.0
+      ]
+    ],
+    "P_MIN": 0.3,
+    "P_MAX": 2.5,
+    "NUCLEO_TOPHAT": 9,
+    "BRILLO_REFLEJO": 60.0,
+    "SATURACION_NOCHE": 1.5
+  },
+  "url": "https://www.youtube.com/watch?v=loW9744B-Co"
 }
