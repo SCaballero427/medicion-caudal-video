@@ -26,11 +26,39 @@ Gobierno de Tokio en la estacion de la propia camara, **上高田上** (pagina
 Tres grabaciones de 60 min sin huecos (15:32, 17:12 y 18:17 hora de Japon). Nivel 1.21-1.23 m todo
 el rato (2 cm, la resolucion del sensor): **la comparacion con el nivel no dice nada en seco**.
 
+Antes del cambio del programa (la noche se tomaba por dia), y forzando el proceso de noche:
+
 | Tramo | Proceso de dia | Proceso de noche (motas) |
 |---|---|---|
 | 15:40-16:40, dia | **0.46-0.50 m/s**, todas las medidas validas | - |
 | 17:20-17:30, atardecer | 0.46-0.48 | 0.23-0.26 |
 | 17:50-19:00, noche en color con farolas | 1-20 de 120 validas, 0.47-0.77 (basura) | **0.063-0.072**, 60-100 % validas |
+
+Con el programa final (`myoshoji_20261014_1532JST_a_1817JST_10min.csv`, nivel del CSV diario oficial):
+
+| Hora (Japon) | Nivel (m) | Velocidad (m/s) | Validas | Modo |
+|---|---|---|---|---|
+| 15:40 | 1.23 | 0.502 | 88/88 | dia |
+| 15:50 | 1.23 | 0.501 | 119/119 | dia |
+| 16:00 | 1.22 | 0.488 | 119/119 | dia |
+| 16:10 | 1.22 | 0.484 | 120/120 | dia |
+| 16:20 | 1.22 | 0.473 | 119/119 | dia |
+| 16:30 | 1.22 | 0.464 | 119/119 | dia |
+| 16:40 | 1.22 | 0.475 | 31/31 | dia |
+| 16:50-17:10 | 1.21-1.22 | - | - | sin grabacion |
+| 17:20 | 1.21 | 0.464 | 89/89 | dia |
+| 17:30 | 1.21 | 0.482 | 118/118 | dia |
+| 17:40 | 1.21 | **0.540** | 61/118 | mixto (cambia a noche a las 17:35) |
+| 17:50-19:20 | 1.21-1.22 | - | 0 de ~1100 | noche: `noche_no_valida` |
+
+Mediana de dia: **0.483 m/s** (983 medidas). El descenso de 0.50 a 0.46 entre las 15:40 y las 16:30
+acompana una bajada de 1 cm del nivel; con esa resolucion no se puede decir si es real.
+
+**El atardecer sesga antes de que salte el umbral.** Entre las 17:32 y las 17:35, con brillo de las
+lineas entre 54 y 60 (por encima de `BRILLO_NOCHE` = 50), el proceso de dia sube a 0.53-0.59 m/s con
+solo 4-6 estaciones; a las 17:28-17:31 daba 0.45-0.52 con 6-8. Eso es el 0.540 "mixto" de las 17:40.
+Subir el umbral a ~60 lo cortaria, pero la grabacion de dia mas oscura (`myoshoji_largo`) tiene 66.5:
+el margen seria pequeno. Queda como pendiente, con estas cifras.
 
 **Cual es la buena: la de dia.** Los aforos oficiales del puente Ochiai (`referencia/`) dan en tiempo
 seco Q 0.38 m3/s con 0.13 m de calado, es decir ~0.4-0.6 m/s en superficie; la de noche queda 5-8
@@ -57,8 +85,12 @@ camara no pasa a infrarrojo y la saturacion sola no la detectaba) y el Myoshoji 
 (`diag_*.log` del atardecer y la noche son las versiones con realce de motas: las de brillo crudo se
 sobrescribieron al lanzarlas en paralelo).
 
-**Pendiente:** de dia esta camara emite a ~12 fps (duplicados alternos de 2 y 3), no a 15. La hora de
-cada fila es correcta, pero el escalon irregular puede sesgar unos pocos por ciento; sin revisar.
+**Pendiente:**
+- De dia esta camara emite a ~12 fps (duplicados alternos de 2 y 3), no a 15. La hora de cada fila es
+  correcta, pero el escalon irregular puede sesgar unos pocos por ciento; sin revisar.
+- El atardecer (brillo 50-60) sesga +10-20 % durante unos minutos antes del cambio de modo (arriba).
+- El programa en directo no usa deno: en este PC puede no abrir YouTube (`grabar_directo.py` si).
+- Una comprobacion con el nivel que diga algo necesita una grabacion con lluvia.
 
 ## Notas de uso
 

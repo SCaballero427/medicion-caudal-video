@@ -933,7 +933,7 @@ Todo está en `analisis_kurome_directo_stiv/verificacion_nivel/`, con su README.
 - **Primera conclusión (equivocada):** los objetos que flotan junto al muro iban a 0.05–0.07 m/s de día y
   de noche, así que se dio por buena la noche y se atribuyó el día a ondas que bajaban del azud.
 - **Lo que la desmontó:** el usuario dudó de que 0.07 m/s fuera razonable y se buscaron datos. La Oficina
-  de Medio Ambiente de Tokio publica dos muestreos al mes en el **puente Ochiai**, aguas abajo de la
+  de Medio Ambiente de Tokio publica un muestreo al mes (dos tomas, ~9:00 y ~13:00) en el **puente Ochiai**, aguas abajo de la
   cámara, con **caudal y calado**: en tiempo seco (2005–2009, 119 muestreos) **Q 0.38 m³/s y 0.13 m de
   calado**, es decir **~0.4–0.6 m/s en superficie**. Coincide con el día; la noche queda 5–8 veces por debajo.
 - **Por qué fallaba la noche:** en una secuencia cada 0.5 s se ve que los puntos brillantes del centro
@@ -960,6 +960,26 @@ Todo está en `analisis_kurome_directo_stiv/verificacion_nivel/`, con su README.
 tres del Shimoda, Akigawa) y en el Sile (+1.2 %) y Heiskanen; el Bradano sigue en 5 de 7. La grabación
 nocturna del Myoshoji pasa de 318 medidas aceptadas a **0 de 720** («noche no válida»): la «mejora» nocturna
 de la fase 12 (220 → 318) medía también destellos.
+
+### 15.5 Resultado final y revisión
+
+Las tres horas con el programa final y el nivel del CSV diario oficial (ya publicado):
+
+| Hora (Japón) | Nivel (m) | Velocidad (m/s) | Medidas válidas | Modo |
+|---|---|---|---|---|
+| 15:40–16:40 | 1.23 → 1.22 | 0.50 → 0.46 | todas | día |
+| 16:50–17:10 | 1.21–1.22 | — | — | sin grabación |
+| 17:20–17:30 | 1.21 | 0.46–0.48 | todas | día |
+| 17:40 | 1.21 | **0.54** | 61 de 118 | mixto (pasa a noche a las 17:35) |
+| 17:50–19:20 | 1.21–1.22 | — | 0 de ~1100 | noche, «no válida» |
+
+- **Mediana de día: 0.483 m/s** (983 medidas), dentro de lo que dan los aforos oficiales.
+- **El atardecer sesga antes del cambio de modo.** Entre las 17:32 y las 17:35, con el brillo de las
+  líneas entre 54 y 60 (por encima del umbral de 50), el proceso de día sube a 0.53–0.59 m/s con solo
+  4–6 estaciones; de ahí sale el 0.54 de las 17:40. Subir el umbral a ~60 lo cortaría, pero la grabación
+  de día más oscura tiene 66.5: el margen sería pequeño. Queda pendiente.
+- **Pendientes:** el sesgo del atardecer; los ~12 fps reales de día; que el programa en directo use deno;
+  y una grabación con lluvia, sin la cual la comparación con el nivel no puede decir nada.
 
 ---
 

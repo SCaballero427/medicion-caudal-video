@@ -1343,7 +1343,9 @@ machine** — it has no `Scripts\` (copied from another computer, whose user was
   depth). Fixes: night also detected by brightness (`BRILLO_NOCHE` = 50, `es_noche()`; day 66-126, night
   in colour 37-45, IR 14) and per-camera `medir_noche` (False for Myoshoji: measured and drawn, no
   station accepted, motive `noche_no_valida`). Open: by day this camera streams ~12 fps (alternating 2/3
-  duplicates), not the 15 assumed.
+  duplicates), not the 15 assumed; and dusk biases high before the switch (17:32-17:35, line brightness
+  54-60: 0.53-0.59 m/s on 4-6 stations vs 0.46-0.50) -- a threshold of ~60 would cut it but the darkest
+  day recording sits at 66.5. Final 3 h table: `verificacion_nivel/README.md`, day median 0.483 m/s.
 - **Night and slow water (2026-10-13). The velocity claim below was refuted on 10-14 (see above).**
   At night Myoshoji measured nothing although debris was
   visibly moving: the water ran ~10x slower than at calibration (~0.05 m/s, **0.1 px per real

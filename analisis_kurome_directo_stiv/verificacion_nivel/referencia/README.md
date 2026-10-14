@@ -9,9 +9,11 @@ de Tokio, tal como se descargan (Shift-JIS, sin tocar):
 - archivo: `https://www.kankyo.metro.tokyo.lg.jp/documents/d/kankyo/measurements-result_<anio>-files-kanda`
 - descargados el 2026-10-14
 
-Cada fila es un muestreo (dos al mes, manana y tarde). Lo que se usa del Myoshoji (妙正寺川) es el punto
-**落合橋 (puente Ochiai, Shimo-Ochiai 4-16, Shinjuku)**, aguas abajo de la camara de Kamitakada sin
-afluentes importantes en medio, y dos columnas: **流量** (caudal, m3/s) y **全水深** (calado total, m).
+Cada fila es un muestreo: un dia al mes, con dos tomas (hacia las 9:00 y las 13:00). Lo que se usa del
+Myoshoji (妙正寺川) es el punto **落合橋 (puente Ochiai, Shimo-Ochiai 4-16, Shinjuku)**, aguas abajo de la
+camara de Kamitakada (segun el trazado del rio, el afluente Ekoda se une antes, en Matsugaoka; entre la
+camara y Ochiai no se ha comprobado que no entren aportes), y dos columnas: **流量** (caudal, m3/s) y
+**全水深** (calado total, m).
 
 `velocidad_ochiai.py` los lee, quita las crecidas y un error de transcripcion (un calado de 18 m) y
 escribe `myoshoji_ochiai.csv` (UTF-8). Con 119 muestreos de tiempo seco:
