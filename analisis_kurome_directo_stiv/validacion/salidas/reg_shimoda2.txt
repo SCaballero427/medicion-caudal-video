@@ -1,0 +1,5 @@
+  shimoda2.avi: 30.00 fps, DS 40.0 mm = 2.00 px/muestra (mediana), 225 muestras por linea, filas por escala [150, 225, 120]
+  modo dia (saturacion 43.3)
+  2912 fotogramas, 88 medidas en 163 s
+shimoda2: +0.48/85 +0.71/88 +0.92/88 +1.08/88 +1.31/88 +1.26/88 +0.93/88 +0.95/88 +1.27/88
+   aceptadas 789 de 792 (motas 0), mediana +1.002

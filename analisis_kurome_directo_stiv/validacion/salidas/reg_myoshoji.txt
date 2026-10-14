@@ -1,0 +1,5 @@
+  myoshoji.avi: 30.00 fps, DS 20.0 mm = 0.65 px/muestra (mediana), 450 muestras por linea, filas por escala [150, 225, 120]
+  modo dia (saturacion 5.4)
+  1785 fotogramas, 50 medidas en 143 s
+myoshoji: +0.50/31 +0.47/50 +0.66/43 +0.53/50 +0.48/50 +0.51/44 -- -- --
+   aceptadas 268 de 450 (motas 0), mediana +0.505

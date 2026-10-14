@@ -13,3 +13,7 @@ desktop.ini
 # Videos sueltos y datasets externos: se quedan fuera del repositorio a proposito
 /videos/
 /datasets vision velocimetria/
+
+# Grabaciones FFV1 de los directos para la regresion de stiv_directo (1-4 GB cada una, por encima del
+# limite de GitHub): se rehacen con validacion/grabar.py
+/analisis_kurome_directo_stiv/validacion/grabaciones/

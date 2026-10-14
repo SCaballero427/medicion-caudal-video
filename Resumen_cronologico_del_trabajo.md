@@ -42,6 +42,8 @@ van marcadas como *aprox.*
 | 13 oct | **`fuentes.json`**: menú y teclas para cambiar entre directos y videos; corregido el **sesgo por fotogramas duplicados** (hasta +26 %) |
 | 13 oct | Burbujas junto al muro del Myoshoji medidas con el **reintento de motas** (9 de 9); ancho del Myoshoji medido en ortofoto (8.8 m) |
 | 13 oct | Cámaras nuevas: **Shimoda** (con **filtro direccional** contra el aliasing estroboscópico) y **Akigawa** (añadida, no mide) |
+| 13–14 oct | **Validación del programa en directo** con referencia: canal USGS (+1.2 % del aforo, sin estabilizar), Bradano y **Heiskanen** (cámara IP con ADCP, Finlandia) |
+| 14 oct | Máscara de actividad al 10 % por bloque **de noche**: el programa mide trazador disperso (Bradano 1 → 5 de 7); de día se mantiene, porque aceptaba destellos del sol. Comprobado con una regresión sobre las grabaciones de los directos |
 
 ---
 
@@ -802,7 +804,96 @@ campo.
 
 ---
 
-## 14. Algoritmos probados, en resumen
+## 14. Fase 12 — Validación del programa en directo con datos de referencia (13–14 oct)
+
+Antes de tener la Raspberry y la cámara, se pasaron videos con referencia independiente por **el mismo
+código de medida** de `stiv_directo.py`: la misma geometría, los mismos buffers con el canal de motas, la
+cascada de escalas, el modo automático y una medida por segundo. De cada caso solo se pusieron la
+geometría y los parámetros propios de la cámara. Los del método (bloques de 48 px, umbral de coherencia
+0.40, máscara de actividad, escalas) son los del programa. La referencia se abrió al final de cada caso.
+Todo está en `analisis_kurome_directo_stiv/validacion/`, con su README.
+
+### 14.1 Canal USGS (Sile Main Canal): el mejor resultado
+
+- **Video original, sin estabilizar**, como llegaría de una cámara. Con 1.78 mm/px y ~0.95 m/s cada
+  fila del STI avanza ~18 px; la deriva del dron (46 px en 22 s) es un 0.4 %, y no se nota.
+- **11 de 11 verticales**, incluidas las dos junto a los muros, que el caso original rechazaba por
+  coherencia (< 0.70). Aquí pasan con 0.59–0.64 y coinciden con el ADV.
+- **Q = 1.4537 m³/s frente al aforo de 1.4362 (+1.2 %)**. Velocidad media en la vertical (0.92 × la
+  superficial) frente al ADV: sesgo +1.6 %, RMSE 0.042 m/s.
+
+### 14.2 Bradano: el programa no medía un trazador disperso
+
+- Con el programa tal cual, **1 de 7 verticales**: 7 de 9 estaciones salían «sin textura».
+- **Causa:** la máscara contra el agua que congela el códec de YouTube exigía que **la mitad** de los
+  píxeles de cada bloque cambiara entre fotogramas. El Bradano es agua casi negra (brillo medio
+  0.01–0.36 de 255) con partículas sueltas: la actividad mediana es **0 exacto**.
+- Sin la máscara, el código del programa reproduce el caso original: 5 de 7, sesgo −2.4 %, RMSE 0.083,
+  r 0.993 (el notebook: 5 de 7, −3.1 %, 0.068, 0.996). El núcleo del método funciona.
+- **Arreglo (`FRACCION_ACTIVA_NOCHE` = 0.1):** en modo noche basta con que el 10 % de los píxeles del
+  bloque cambie; de día sigue el 50 %. Lo que protege del agua congelada es la máscara **por píxel**, que
+  no cambió: los píxeles quietos no aportan al tensor, y en agua negra los quietos tampoco tienen
+  textura. Con el arreglo: **5 de 7, sesgo −4.5 %, RMSE 0.070, r 0.992**. Con 0.05 se llegaba a 6 de 7,
+  pero en el Myoshoji entraban medidas falsas junto al muro en sombra; por eso 0.1.
+- **Por qué solo de noche.** La primera versión bajaba la fracción siempre. Al repasar Heiskanen con el
+  programa cambiado, el video de las 10:03 (agua saturada por el sol) pasó de rechazarse a **14 de 20
+  estaciones a +36 %**: los bordes del reflejo y los destellos llenan el 10 % de un bloque. El 50 %
+  protegía de eso sin que nadie lo hubiera buscado. De noche sí hay exclusión de reflejos; de día no, y
+  no se puede hacer por saturación (las estaciones buenas del Myoshoji de día están saturadas en un
+  71–82 %). Se encontró porque se volvieron a pasar **todos** los casos con el programa final.
+- El video es gris (saturación 0.0) y el modo automático lo trata como **noche**, que es por lo que el
+  arreglo le llega. Cualquier fuente en blanco y negro entra en modo noche; con una cámara configurada en
+  B/N de día hay que fijar `--modo dia`. Un video **en color** de agua oscura con trazador disperso
+  seguiría sin medir de día.
+
+### 14.3 Regresión del arreglo sobre las grabaciones de los directos
+
+Todos los casos se volvieron a pasar con el programa final (`validacion/regresion.py` sobre las
+grabaciones de los directos, más los tres casos con referencia):
+
+| Grabación | Modo | Antes (0.5 siempre): aceptadas, mediana | Ahora | |
+|---|---|---|---|---|
+| Kurome (`kurome`) | dia | 294 de 450, 0.856 m/s | 294 de 450, 0.856 | idéntico |
+| Myoshoji (`myoshoji`) | dia | 268 de 450, 0.505 | 268 de 450, 0.505 | idéntico |
+| Myoshoji 200 s (`myoshoji_largo`) | dia | 1643 de 1872, 0.482 | 1643 de 1872, 0.482 | idéntico |
+| Myoshoji clip 20 s (`myoshoji_dia20`) | dia | 60 de 90, 0.492 | 60 de 90, 0.492 | idéntico |
+| **Myoshoji de noche** (`myoshoji_noche`) | noche | **220** de 720, 0.054 | **318** de 720, 0.057 | estaciones 1, 2 y 8 nuevas, a 0.02-0.07 como sus vecinas |
+| Shimoda (`shimoda`, `shimoda2`) | dia | 581 de 585, 1.055; 789 de 792, 1.002 | igual | idéntico |
+| Shimoda (`shimoda3`) | dia | - | 709 de 720, 1.070 | (sin corrida previa; de día el código es el de antes) |
+| Akigawa (`akigawa`) | dia | 0 de 540 | 0 de 540 | sigue sin medir, como debe |
+| Bradano (`caso_bradano.py`) | noche (gris) | 1 de 7 verticales | **5 de 7**, -4.5 % | |
+| Sile (`caso_sile.py`) | dia | Q +1.2 % | Q +1.2 % | idéntico |
+| Heiskanen (`caso_heiskanen.py`) | dia | 08 h -18 %, 09 h -14 %, 10 h 3 de 20, 13 h +35 % | igual | idéntico (con 0.1 de dia, 10 h daba 14 de 20 a +36 %) |
+
+De día el programa hace exactamente lo mismo que antes; los cambios están todos en modo noche.
+
+### 14.4 Heiskanen (río Oulankajoki, Finlandia): una cámara IP fija con ADCP
+
+El conjunto más parecido a ALIAR: cámaras fijas en dos ríos (una **cámara IP Reolink** 4K, una térmica
+FLIR y una OAK-D), 94 videos de 30 s de 2023–2024, aforos con ADCP, batimetría, modelos de cámara,
+líneas de búsqueda STIV y los resultados STIV y LSPIV de los propios autores. Se usó la Reolink del
+20-05-2023 (6 videos, de 08 a 13 h; ADCP a las 10:13).
+
+- **Geometría:** la cámara está montada de lado (el video lleva una rotación de 90° en los metadatos y el
+  modelo es de la imagen nativa). El modelo (formato de Hydro-STIV: focal, posición y ángulos) admite dos
+  convenciones que son espejo una de otra y ambas caen sobre agua. Se eligió **sin mirar el ADCP**: la que
+  no es espejo y la única que alinea las líneas con el flujo medido en la imagen (0–7° frente a 12–18°).
+- **08:03 y 09:03:** 7–8 de 20 estaciones, solo el tercio cercano, **−14 a −18 %** frente al ADCP, igual
+  con `V_ESPERADA` de 0.7 a 1.4. La causa no está identificada; no es el antialias (probado con un σ
+  por estación: sin cambio) ni `V_ESPERADA`.
+- **10 a 12 h, con el sol de cara:** el agua sale saturada y el programa la rechaza («sin textura») en
+  vez de inventar.
+- **13:03:** 16 de 20 estaciones, pero **+33 %**, con buena coherencia. No es el río (el caudal bajaba de
+  141 a 120 m³/s ese día): son **destellos del sol** en las ondas. Es el caso peligroso, un error que
+  parece una buena medida; de día el programa no tiene defensa contra eso.
+- **Zona lejana (20–40 m):** rechazada siempre; agua lisa que refleja los árboles. Ahí el STIV de los
+  autores da 0.24–0.46 m/s donde el ADCP mide ~1.0: el programa se abstiene donde ellos se equivocan.
+- Lecciones para el sitio de ALIAR: que la cámara no mire al sol, que esté cerca del agua y,
+  probablemente, con polarizador.
+
+---
+
+## 15. Algoritmos probados, en resumen
 
 | Algoritmo | Dónde | Estado |
 |---|---|---|
@@ -824,10 +915,13 @@ campo.
 | **Filtro direccional** en el espectro 2D del STI | Shimoda | En uso, solo por cámara; validado por invariancia al muestreo |
 | Paso alto temporal en el STI | Akigawa | Probado; insuficiente (coherencia 0.37) |
 | Modelo de cámara (punto de fuga + ancho + referencia a lo largo) | Myoshoji | Probado; no pasó la comprobación con una persona |
+| Modelo de cámara de Hydro-STIV (colinealidad) → cuadrilátero sobre el plano del agua | Heiskanen | En uso para la validación |
+| Antialias con un σ por estación (en vez de uno común) | Heiskanen | Probado; sin efecto, no se adoptó |
+| Máscara de actividad por bloque al 10 % solo de noche (de día sigue al 50 %) | Todas las cámaras | **En uso** desde el 14 oct; al 10 % también de día aceptaba destellos |
 
 ---
 
-## 15. Tiempos de procesamiento
+## 16. Tiempos de procesamiento
 
 | Proceso | Tiempo | Memoria |
 |---|---|---|
@@ -857,13 +951,15 @@ campo.
 | Medida de día con reintento de motas (Myoshoji) | ~0.7 s por medida en el PC (antes ~0.35) | — |
 | Medida del Shimoda con filtro direccional | 0.15–0.22 s por medida | — |
 | Primera medida en estaciones lentas (escala de 60 s) | ~60–70 s tras arrancar | — |
+| Programa en directo sobre video 4K de 30 s (Heiskanen, 20 estaciones) | 31–38 s en el PC | — |
+| Programa en directo sobre el canal USGS (22 s, 4K, 11 estaciones) | ~81 s en el PC | — |
 
 **Lección de costes:** en STIV, el algoritmo es el 0.1 % del tiempo; leer el video es el 99.9 %.
 LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 
 ---
 
-## 16. Resultados finales
+## 17. Resultados finales
 
 | Caso | Método | Resultado | Referencia |
 |---|---|---|---|
@@ -882,11 +978,15 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 | Kurome tras corregir los duplicados | STIV | 5–6 de 9, ~0.85 m/s (antes ~0.94) | Correlación independiente: 0.72–1.0 m/s (estaciones 5–8) |
 | Shimoda | STIV + filtro direccional | 9 de 9, ~1.0–1.1 m/s (río crecido) | Escala supuesta; invariante al muestreo |
 | Akigawa | STIV, varias variantes | 0 de 9 | No medible con este video, explicado |
+| Canal USGS, programa en directo sin estabilizar | STIV en directo | **1.4537 m³/s, 11 de 11 verticales** | **+1.2 %** del aforo ADV |
+| Bradano, programa en directo (con el arreglo de la máscara) | STIV en directo | 5 de 7 verticales | Sesgo −4.5 %, r 0.992 |
+| Heiskanen, Reolink 08–09 h | STIV en directo | 7–8 de 20 estaciones (tercio cercano) | −14 a −18 % del ADCP |
+| Heiskanen, Reolink 13 h | STIV en directo | 16 de 20, **+33 %** | Destellos del sol: error aceptado |
 | Raspberry Pi emulada en Docker | Mismo STIV, sin pantalla, como servicio | Mismos números que en el PC; reconecta sola | Velocidad real de la Pi sin medir |
 
 ---
 
-## 17. Reglas de trabajo que salieron del proceso
+## 18. Reglas de trabajo que salieron del proceso
 
 1. **La referencia se abre una sola vez, al final.** Nada se ajusta después (de ahí que se eliminaran
    el barrido de `v_corr` y los detectores automáticos sobreajustados).
@@ -908,3 +1008,8 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
     resultado lo sigue, es un artefacto.
 11. **Cambiar de fuente no recarga el código:** tras una actualización hay que cerrar y volver a abrir
     el programa. La versión se muestra al arrancar.
+12. **Un filtro pensado para un problema puede tapar otro caso:** la máscara contra el agua congelada
+    de YouTube dejaba sin medir un trazador disperso sobre agua negra. Cada cambio del método se
+    comprueba con una regresión sobre grabaciones (`validacion/regresion.py`).
+13. **La luz del sol decide más que el algoritmo:** de cara satura el agua (sin datos) y con destellos
+    da errores con buena coherencia. La orientación de la cámara es parte del diseño.

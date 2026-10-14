@@ -1,0 +1,22 @@
+  RiverBradano_24_fps_Stabilised.avi: 24.00 fps, DS 37.5 mm = 4.17 px/muestra (mediana), 128 muestras por linea, filas por escala [240, 240, 120]
+  modo noche (saturacion 0.0)
+  600 fotogramas, 15 medidas en 74 s
+  est 0 (col 456): rechazada {'sin_textura_esperando': 15}
+  est 1 (col 567): 1.384 m/s [1.32-1.39] coh 0.89, 15/15 r
+  est 2 (col 678): 0.965 m/s [0.95-0.96] coh 0.94, 13/15 r
+  est 3 (col 789): 0.719 m/s [0.70-0.80] coh 0.95, 15/15 r
+  est 4 (col 900): 0.602 m/s [0.59-0.63] coh 0.92, 13/15 r
+  est 5 (col 1011): 0.387 m/s [0.39-0.39] coh 0.89, 5/15 r
+  est 6 (col 1122): rechazada {'sin_textura_esperando': 15}
+  est 7 (col 1233): rechazada {'sin_textura_esperando': 15}
+  est 8 (col 1344): rechazada {'coherencia': 15}
+
+vertical  ref    directo
+  1     0.84     --
+  2     1.48   1.38
+  3     1.04   0.96
+  4     0.77   0.72
+  5     0.53   0.60
+  6     0.43   0.39
+  7     0.63     --
+5/7 verticales; sesgo (media) -4.5 %, RMSE 0.070 m/s, r +0.992

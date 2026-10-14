@@ -1,0 +1,5 @@
+  akigawa.avi: 30.00 fps, DS 66.7 mm = 1.88 px/muestra (mediana), 390 muestras por linea, filas por escala [150, 225, 120]
+  modo dia (saturacion 23.8)
+  2099 fotogramas, 60 medidas en 168 s
+akigawa: -- -- -- -- -- -- -- -- --
+   aceptadas 0 de 540 (motas 0), mediana +nan

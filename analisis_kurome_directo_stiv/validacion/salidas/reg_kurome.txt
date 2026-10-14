@@ -1,0 +1,5 @@
+  kurome.avi: 30.00 fps, DS 26.7 mm = 1.77 px/muestra (mediana), 300 muestras por linea, filas por escala [150, 225, 120]
+  modo dia (saturacion 31.4)
+  1785 fotogramas, 50 medidas en 124 s
+kurome: -- +0.80/50 +0.87/50 +0.72/15 -- +0.75/29 +0.86/50 +0.87/50 +1.05/50
+   aceptadas 294 de 450 (motas 0), mediana +0.856

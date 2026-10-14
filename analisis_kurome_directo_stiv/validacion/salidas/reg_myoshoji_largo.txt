@@ -1,0 +1,5 @@
+  myoshoji_largo.avi: 30.00 fps, DS 20.0 mm = 0.65 px/muestra (mediana), 450 muestras por linea, filas por escala [150, 225, 120]
+  modo dia (saturacion 6.6)
+  6515 fotogramas, 208 medidas en 505 s
+myoshoji_largo: +0.47/179 +0.49/208 +0.60/204 +0.54/208 +0.48/208 +0.48/208 +0.04/142 +0.03/148 +0.02/138
+   aceptadas 1643 de 1872 (motas 382), mediana +0.482

@@ -1306,6 +1306,20 @@ machine** — it has no `Scripts\` (copied from another computer, whose user was
   flow sense, so it is not global: on Kurome it would lower 0.86 -> 0.66 m/s (closer to an ensemble
   correlation, 0.72), Myoshoji -7-10 %, and on `akigawa` it "measures" ~0.7 m/s that drifts +20 %
   with DS -- not trusted.
+- **Validated against reference data (2026-10-13/14), `validacion/`.** Videos with independent
+  references are run through **this same code** (`validacion/correr.py` imports `stiv_directo.py`;
+  only geometry and per-camera parameters are set, method parameters are the program's). Sile Main
+  Canal on the *unstabilised* original: 11/11 verticals, **Q +1.2 %** vs the ADV gauging. Bradano: the
+  block activity rule (half the pixels active) measured **1 of 7** on sparse particles over near-black
+  water; `FRACCION_ACTIVA_NOCHE = 0.1` gives 5 of 7 (-4.5 %). It is **night-only on purpose**: at 0.1 by
+  day, Heiskanen's sun-glare video went from abstaining to 14/20 stations at +36 %, and glints cannot be
+  told from good water by saturation (`destellos.py`). Bradano gets it because a grey video is read as
+  IR night. Heiskanen (Oulankajoki, Reolink IP camera, ADCP; dataset in `datasets vision velocimetria/`):
+  -14 to -18 % on the near third, unexplained; **sun glints at 13 h pass QC at +33 %** - the program has
+  no daytime glint defence. Camera mounted sideways: its Hydro-STIV model is for the native frame
+  (`CAP_PROP_ORIENTATION_AUTO` = 0) and the mirror ambiguity was resolved by optical-flow alignment,
+  not by the ADCP. `validacion/regresion.py <caso>` replays live-stream recordings (FFV1, in the
+  git-ignored `validacion/grabaciones/`, remade with `grabar.py`) to check method changes.
 - **Switching sources (2026-10-13).** `fuentes.json` lists streams and recorded videos (camera
   name + `url` or `archivo`, optional `modo` defaulting to auto, optional per-camera `ajustes`).
   `arrancar.bat` with no arguments shows a console menu (`--elegir`); in the window `c` = next,

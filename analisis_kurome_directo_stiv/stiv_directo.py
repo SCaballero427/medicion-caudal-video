@@ -193,6 +193,17 @@ LADO_BLOQUE = 48            # bloques del tensor, 50 % de solape
 # congela (bloques "skip") da EXACTAMENTE 0.00 aunque sea una estela vertical perfectamente
 # coherente; el agua con textura da 0.7-5.6. Medido de noche sobre 300 filas x 9 estaciones.
 ACTIVIDAD_MIN = 0.5
+# Fraccion de pixeles activos para que un bloque cuente. Lo que frena el agua congelada por el codec es
+# la mascara POR PIXEL (los pixeles quietos no aportan al tensor); esta fraccion decide cuanto trazador
+# hace falta en el bloque. De dia se queda en 0.5. De noche baja a 0.1: el trazador son motas sueltas
+# sobre agua negra, y con 0.5 casi ningun bloque llegaba (Bradano, agua a 0.01-0.36/255 con particulas:
+# 1 de 7 verticales -> 5 de 7, sesgo -4.5 %; Myoshoji de noche 220 -> 318 medidas, misma mediana).
+# No se baja de dia porque ahi no hay exclusion de reflejos: en Heiskanen con el sol de cara (agua
+# saturada) 0.1 aceptaba 14 de 20 estaciones a +36 %, que con 0.5 se rechazan como "sin textura". Los
+# destellos no se separan por saturacion (las estaciones buenas del Myoshoji de dia estan saturadas en
+# un 70-80 %). Pruebas y regresion en validacion/README.md.
+FRACCION_ACTIVA = 0.5
+FRACCION_ACTIVA_NOCHE = 0.1
 N_BLOQUES_MIN = 6           # bloques activos necesarios para que una estacion cuente
 # 0.40 como en Boneyard (textura fina). Con la mascara de actividad la coherencia ya no es la que
 # frena la trampa del cero; el STI nocturno del rapido da 0.3-0.55 con estelas claras a simple vista,
@@ -366,7 +377,7 @@ def guardar_config(cfg):
     salida["parametros"] = {k: globals()[k] for k in (
         "V_ESPERADA", "N_ESTACIONES", "MARGEN_ORILLA", "LARGO_LINEA_M", "CENTRO_LINEA",
         "LINEAS_BANDA", "ANCHO_BANDA_M", "VENTANA_S", "PASO_MEDIDA_S", "LADO_BLOQUE", "FPS_CAMARA",
-        "ACTIVIDAD_MIN", "N_BLOQUES_MIN", "COH_MIN", "V_MAX_FISICA", "ESCALAS", "P_MIN", "P_MAX",
+        "ACTIVIDAD_MIN", "FRACCION_ACTIVA", "FRACCION_ACTIVA_NOCHE", "N_BLOQUES_MIN", "COH_MIN", "V_MAX_FISICA", "ESCALAS", "P_MIN", "P_MAX",
         "NUCLEO_TOPHAT", "BRILLO_REFLEJO", "SATURACION_NOCHE", "FILTRO_DIRECCIONAL")}
     with open(ARCHIVO_CONFIG, "w", encoding="utf-8") as f:
         json.dump(salida, f, indent=2, ensure_ascii=False)
@@ -486,7 +497,7 @@ class Geometria:
 
 
 # ─────────────────────────────────────────── el metodo ───────────────────────────────────────────
-def pendiente_tensor(sti, actividad):
+def pendiente_tensor(sti, actividad, fraccion_activa=None):
     """Pendiente (muestras/fila) por tensor de estructura en bloques, mediana ponderada por coherencia.
 
     Solo cuentan los bloques activos: sin esa seleccion, el agua congelada por el codificador es una
@@ -508,7 +519,7 @@ def pendiente_tensor(sti, actividad):
         celdas = img[:nt * c, :nk * c].reshape(nt, c, nk, c).sum(axis=(1, 3), dtype=np.float64)
         return celdas[:-1, :-1] + celdas[1:, :-1] + celdas[:-1, 1:] + celdas[1:, 1:]
 
-    activos = bloques(m) / (4 * c * c) >= 0.5
+    activos = bloques(m) / (4 * c * c) >= (FRACCION_ACTIVA if fraccion_activa is None else fraccion_activa)
     jss, jtt, jst = bloques(m * gs * gs)[activos], bloques(m * gt * gt)[activos], bloques(m * gs * gt)[activos]
     n_activos = int(activos.sum())
     tr = jss + jtt
@@ -589,6 +600,9 @@ def medir(buffers, geom, cobertura, modo="dia", brillo=None, buffers_motas=None)
         # una posicion cuenta como deslumbrada si lo esta en cualquiera de las lineas de la banda
         deslumbrado = (brillo.reshape(N_ESTACIONES, LINEAS_BANDA, -1) > BRILLO_REFLEJO).any(axis=1)
     cache = {}
+    # de noche (solo en modo noche, que tiene la exclusion de reflejos) basta menos trazador por bloque;
+    # el reintento de motas de dia sigue con la fraccion de dia (ver FRACCION_ACTIVA)
+    fraccion = FRACCION_ACTIVA_NOCHE if modo == "noche" else FRACCION_ACTIVA
 
     def escala(bufs, proceso, j):
         """(pendiente, coherencia, bloques, sti) por estacion en la escala j, calculado una vez."""
@@ -597,7 +611,7 @@ def medir(buffers, geom, cobertura, modo="dia", brillo=None, buffers_motas=None)
             if deslumbrado is not None:
                 for i in range(N_ESTACIONES):
                     act[i][:, deslumbrado[i]] = 0
-            cache[(proceso, j)] = [(*pendiente_tensor(stis[i], act[i]), stis[i])
+            cache[(proceso, j)] = [(*pendiente_tensor(stis[i], act[i], fraccion), stis[i])
                                    for i in range(N_ESTACIONES)]
         return cache[(proceso, j)]
 

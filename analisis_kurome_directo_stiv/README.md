@@ -323,7 +323,27 @@ es sospechosa; no se ha revisado de dia.
 **Nada valida esos numeros**: no hay aforo ni referencia. Son reproducibles y coherentes entre
 ventanas, no exactos.
 
+## Validacion con datos de referencia (2026-10-13/14): `validacion/`
+
+El metodo de este programa si se valido, con videos que tienen referencia, pasandolos por **este mismo
+codigo** (`validacion/correr.py` importa `stiv_directo.py`). Detalle en `validacion/README.md`.
+
+- **Canal USGS (Sile)**, video original sin estabilizar: **11 de 11 verticales, Q +1.2 % del aforo ADV**.
+- **Bradano** (agua casi negra, particulas sueltas): el programa medía **1 de 7**; con
+  `FRACCION_ACTIVA_NOCHE` = 0.1, **5 de 7, sesgo -4.5 %**. Solo de noche: de dia, 0.1 aceptaba destellos del
+  sol (ver la validacion).
+- **Heiskanen** (Finlandia, camara IP Reolink con ADCP): -14 a -18 % en el tercio cercano con el sol
+  detras; con el sol de cara se abstiene; **con destellos del sol (13 h) acepta +33 %**. La zona lejana
+  (20-40 m) se rechaza siempre.
+- `validacion/regresion.py` pasa las grabaciones de los directos por el programa: es la forma de
+  comprobar que un cambio del metodo no estropea las camaras que ya miden.
+
 ## Limites conocidos
+
+- **De dia no hay defensa contra los destellos del sol**: medidas con buena coherencia y +33 %
+  (Heiskanen, `validacion/`). La exclusion de reflejos (`BRILLO_REFLEJO`) es solo de noche, y la
+  saturacion no los separa del agua buena. Orientar la camara para que no los vea.
+- Una fuente en blanco y negro entra siempre en modo noche (el automatico mira la saturacion).
 
 - **Escala supuesta** (arriba). Es, de lejos, la mayor incertidumbre.
 - `ACTIVIDAD_MIN` y `COH_MIN` se fijaron con el Kurome de noche; en el Myoshoji de dia funcionan,
