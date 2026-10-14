@@ -1,0 +1,4 @@
+dia_1542: 900 fotogramas reales, 83672 motas detectadas, 23 pistas rectas de >= 3 s
+  banda 0-2:    2 pistas, v a lo largo mediana +0.013 m/s [q25 +0.013, q75 +0.014], de traves -0.005
+  banda 3-5:   12 pistas, v a lo largo mediana +0.218 m/s [q25 +0.195, q75 +0.242], de traves +0.035
+  banda 6-8:    9 pistas, v a lo largo mediana +0.067 m/s [q25 +0.064, q75 +0.076], de traves -0.012

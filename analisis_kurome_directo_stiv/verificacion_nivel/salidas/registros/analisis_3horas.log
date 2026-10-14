@@ -1,0 +1,43 @@
+myoshoji_20261014_1532JST.ts: 59.7 min, 0 huecos; hora: hora de descarga (aproximada)
+  715 medidas de myoshoji_20261014_1532JST_medidas.csv
+myoshoji_20261014_1712JST.ts: 59.8 min, 0 huecos; hora: hora de descarga (aproximada)
+  myoshoji_20261014_1712JST.ts: 30.00 fps, DS 20.0 mm = 0.65 px/muestra (mediana), 450 muestras por linea, filas por escala [150, 225, 120]
+  modo dia (saturacion 11.3)
+  t=1350 s: cambio a modo noche
+  107714 fotogramas, 715 medidas en 566 s
+myoshoji_20261014_1817JST.ts: 59.8 min, 0 huecos; hora: hora de descarga (aproximada)
+  myoshoji_20261014_1817JST.ts: 30.00 fps, DS 20.0 mm = 0.65 px/muestra (mediana), 450 muestras por linea, filas por escala [150, 225, 120]
+  modo noche (saturacion 10.1)
+  107558 fotogramas, 716 medidas en 440 s
+
+nivel: CSV diario (estacion 上高田上)
+hora JST  nivel(m)  v mediana (m/s)  [q25-q75]  medidas validas  modo
+  15:40   1.23     0.502  [0.492-0.516]   88/88   dia
+  15:50   1.23     0.501  [0.486-0.515]   119/119   dia
+  16:00   1.22     0.488  [0.470-0.505]   119/119   dia
+  16:10   1.22     0.484  [0.472-0.493]   120/120   dia
+  16:20   1.22     0.473  [0.456-0.492]   119/119   dia
+  16:30   1.22     0.464  [0.451-0.472]   119/119   dia
+  16:40   1.22     0.475  [0.457-0.480]   31/31   dia
+  16:50   1.22       --                    0/0   (sin grabacion)
+  17:00   1.21       --                    0/0   (sin grabacion)
+  17:10   1.21       --                    0/0   (sin grabacion)
+  17:20   1.21     0.464  [0.446-0.477]   89/89   dia
+  17:30   1.21     0.482  [0.467-0.502]   118/118   dia
+  17:40   1.21     0.540  [0.490-0.558]   61/118   mixto
+  17:50   1.21       --                    0/120   noche
+  18:00   1.22       --                    0/118   noche
+  18:10   1.22       --                    0/120   noche
+  18:20   1.22       --                    0/62   noche
+  18:30   1.22       --                    0/119   noche
+  18:40   1.21       --                    0/120   noche
+  18:50   1.21       --                    0/119   noche
+  19:00   1.21       --                    0/119   noche
+  19:10   1.22       --                    0/120   noche
+  19:20   1.22       --                    0/89   noche
+
+nivel: rango 2 cm; velocidad: 0.464-0.540 m/s; correlacion +0.03
+  el nivel apenas se mueve: la correlacion no significa nada (hace falta lluvia)
+  modo dia: 983 medidas, mediana 0.483 m/s
+
+C:\Users\sergi\Desktop\test_pyorc-20261009T172625Z-1-001\test_pyorc\analisis_kurome_directo_stiv\verificacion_nivel\salidas\myoshoji_20261014_1532JST_a_1817JST_10min.csv, _grafica.png (y un _medidas.csv por grabacion)

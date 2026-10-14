@@ -44,6 +44,7 @@ van marcadas como *aprox.*
 | 13 oct | Cámaras nuevas: **Shimoda** (con **filtro direccional** contra el aliasing estroboscópico) y **Akigawa** (añadida, no mide) |
 | 13–14 oct | **Validación del programa en directo** con referencia: canal USGS (+1.2 % del aforo, sin estabilizar), Bradano y **Heiskanen** (cámara IP con ADCP, Finlandia) |
 | 14 oct | Máscara de actividad al 10 % por bloque **de noche**: el programa mide trazador disperso (Bradano 1 → 5 de 7); de día se mantiene, porque aceptaba destellos del sol. Comprobado con una regresión sobre las grabaciones de los directos |
+| 14 oct | **Verificación con el nivel**: tres horas grabadas del Myoshoji. Con el mismo nivel, día 0.46–0.50 m/s y noche 0.04–0.07; el **caudal oficial del puente Ochiai** confirma el día. De noche la cámara solo ve destellos fijos: noche detectada también por brillo y `medir_noche` = False |
 
 ---
 
@@ -592,7 +593,11 @@ medidas con las del usuario.
 **Síntoma:** de noche el Myoshoji no medía ninguna estación, aunque a simple vista se veían basura
 y burbujas avanzando.
 
-**Diagnóstico:** de noche el agua iba unas **10 veces más despacio** que de día: ~0.05 m/s, es decir
+> **Corregido el 14 oct (sección 15):** este diagnóstico era falso. Con el mismo nivel, de día el agua va a
+> 0.46–0.50 m/s, y el caudal oficial lo confirma; lo que avanza a ~0.05 m/s de noche son destellos de las
+> farolas sobre ondulaciones casi fijas de la superficie, no la corriente.
+
+**Diagnóstico (descartado después):** de noche el agua iba unas **10 veces más despacio** que de día: ~0.05 m/s, es decir
 **0.1 px por fotograma real**. Se confirmó con una correlación de conjunto a desfases largos, sin
 STIV. Con el STI de 10 s fotograma a fotograma:
 
@@ -794,7 +799,7 @@ lado, con el agua de izquierda a derecha, hacia el puente. **Se añadió como fu
 
 | Cámara | Ajustes propios | Ajustes generales que le afectan | Estado |
 |---|---|---|---|
-| **Myoshoji** | Líneas de 6 a 9 m; ancho 8.8 m (ortofoto) | Modo noche y escalas lentas; una fila por fotograma real; reintento con motas (estaciones 6–8) | Día: 9 de 9 tras ~70 s, ~0.48 m/s. Noche: 5–6 de 9, ~0.06 m/s |
+| **Myoshoji** | Líneas de 6 a 9 m; ancho 8.8 m (ortofoto) | Modo noche y escalas lentas; una fila por fotograma real; reintento con motas (estaciones 6–8) | Día: 9 de 9 tras ~70 s, ~0.48 m/s (compatible con el caudal oficial). Noche: **no se mide** desde el 14 oct (los ~0.06 m/s eran destellos fijos) |
 | **Kurome** (puente Koma) | Ninguno (`v_esperada` 0.9 probado y descartado) | Una fila por fotograma real (−10–20 %) | Día: 5–6 de 9, ~0.85 m/s |
 | **Shimoda** | Cuadrilátero invertido (agua hacia el puente); `v_esperada` 0.6; banda 0.35 m; **filtro direccional** | Una fila por fotograma real | 9 de 9, ~1.0–1.1 m/s con el río crecido |
 | **Akigawa** | Cuadrilátero sobre todo el tramo; `v_esperada` 1.0 | — | No mide (códec y olas fijas) |
@@ -893,7 +898,72 @@ líneas de búsqueda STIV y los resultados STIV y LSPIV de los propios autores. 
 
 ---
 
-## 15. Algoritmos probados, en resumen
+## 15. Fase 13 — Verificación con el nivel y el caudal oficial: la noche medía mal (14 oct)
+
+Todo está en `analisis_kurome_directo_stiv/verificacion_nivel/`, con su README.
+
+### 15.1 Grabar el directo y cruzarlo con el nivel
+
+- **Fuente de nivel:** la página del sistema de vigilancia de ríos de Tokio tiene una estación de nivel en
+  el mismo sitio que la cámara del Myoshoji (上高田上). Publica **solo nivel**, cada 10 min, con un CSV
+  diario al día siguiente; no publica caudal, velocidad ni la cota del fondo.
+- **`grabar_directo.py`:** graba el directo tal como llega, sin recomprimir (~0.8 GB/h), y anota la hora
+  de cada segmento. Para que funcionara hizo falta instalar en el `.venv` el intérprete **deno** y el
+  paquete `yt-dlp-ejs`: desde octubre YouTube exige resolver un desafío en JavaScript (además del
+  bloqueo «no eres un bot», que se pasó con cookies de una sesión).
+- **`analizar.py`:** mide una o varias grabaciones con el código del programa y las une con el nivel en
+  tramos de 10 min, con tabla y gráfica.
+- **Grabaciones:** tres horas, 15:32–19:17 hora de Japón, sin huecos. El nivel se movió solo 2 cm
+  (1.21–1.23 m), así que **en seco la comparación con el nivel no dice nada**: hace falta grabar con lluvia.
+
+### 15.2 Día y noche no cuadraban
+
+- **Con el mismo nivel:** de día, **0.46–0.50 m/s**. De noche, la cámara **no pasa a infrarrojo**: sigue en
+  color con las farolas, y el modo automático, que solo miraba la saturación, la tomaba por día y
+  rechazaba casi todo.
+- **Forzando el modo noche:** sale **0.063–0.072 m/s**, estable. Un factor 7 con el mismo nivel no podía
+  ser real.
+
+### 15.3 Diagnóstico, con una conclusión falsa por el camino
+
+- **Árbitros independientes del STIV:**
+  - correlación cruzada 2D de conjunto en la vista en planta, a desfases de 0.07 a 8 s;
+  - seguimiento de lo que flota;
+  - espectro número de onda–frecuencia del STI largo.
+- **Primera conclusión (equivocada):** los objetos que flotan junto al muro iban a 0.05–0.07 m/s de día y
+  de noche, así que se dio por buena la noche y se atribuyó el día a ondas que bajaban del azud.
+- **Lo que la desmontó:** el usuario dudó de que 0.07 m/s fuera razonable y se buscaron datos. La Oficina
+  de Medio Ambiente de Tokio publica dos muestreos al mes en el **puente Ochiai**, aguas abajo de la
+  cámara, con **caudal y calado**: en tiempo seco (2005–2009, 119 muestreos) **Q 0.38 m³/s y 0.13 m de
+  calado**, es decir **~0.4–0.6 m/s en superficie**. Coincide con el día; la noche queda 5–8 veces por debajo.
+- **Por qué fallaba la noche:** en una secuencia cada 0.5 s se ve que los puntos brillantes del centro
+  **apenas se mueven en 2 s**. Son **destellos de las farolas sobre ondulaciones casi fijas** de la superficie
+  (las piedras del fondo en 13 cm de agua). El realce de motas, el seguimiento y la correlación los miden
+  todos igual de bien, y por eso coincidían entre sí sin medir el agua. El espectro nocturno no tiene nada
+  a 0.4 m/s: **de noche esta cámara no ve el agua que fluye**.
+- **Por qué el día es advección y no ondas:** su espectro es una recta f = 0.42 k que pasa por el origen,
+  igual a todas las longitudes de onda. Unas ondas así a 0.42 m/s exigirían ~2 cm de calado; con 13 cm
+  irían a ~1.1 m/s.
+- **De paso:** de día esta cámara emite a **~12 fps** (duplicados alternos de 2 y 3), no a los 15 supuestos.
+  Queda sin revisar si sesga.
+
+### 15.4 Cambios en el programa
+
+- **Noche detectada también por brillo** (`BRILLO_NOCHE` = 50): de día 66–126 en todas las grabaciones,
+  atardecer aún válido 59, noche en color 37–45, infrarrojo 14.
+- **`"medir_noche": False` para el Myoshoji:** de noche mide y dibuja, pero ninguna estación se acepta
+  (motivo `noche_no_valida`). Las demás cámaras siguen igual.
+- **Datos de referencia:** los cinco CSV oficiales (2005–2009) están en `verificacion_nivel/referencia/`,
+  con `velocidad_ochiai.py`.
+
+**Regresión con el programa final:** de día, idéntico en todas las grabaciones (Kurome, tres del Myoshoji,
+tres del Shimoda, Akigawa) y en el Sile (+1.2 %) y Heiskanen; el Bradano sigue en 5 de 7. La grabación
+nocturna del Myoshoji pasa de 318 medidas aceptadas a **0 de 720** («noche no válida»): la «mejora» nocturna
+de la fase 12 (220 → 318) medía también destellos.
+
+---
+
+## 16. Algoritmos probados, en resumen
 
 | Algoritmo | Dónde | Estado |
 |---|---|---|
@@ -916,12 +986,14 @@ líneas de búsqueda STIV y los resultados STIV y LSPIV de los propios autores. 
 | Paso alto temporal en el STI | Akigawa | Probado; insuficiente (coherencia 0.37) |
 | Modelo de cámara (punto de fuga + ancho + referencia a lo largo) | Myoshoji | Probado; no pasó la comprobación con una persona |
 | Modelo de cámara de Hydro-STIV (colinealidad) → cuadrilátero sobre el plano del agua | Heiskanen | En uso para la validación |
+| Espectro número de onda–frecuencia del STI (advección frente a ondas) | Myoshoji | Diagnóstico; separó advección (día) de destellos casi fijos (noche) |
+| Detección de noche por brillo (además de saturación) | Cámaras en directo | **En uso** desde el 14 oct |
 | Antialias con un σ por estación (en vez de uno común) | Heiskanen | Probado; sin efecto, no se adoptó |
 | Máscara de actividad por bloque al 10 % solo de noche (de día sigue al 50 %) | Todas las cámaras | **En uso** desde el 14 oct; al 10 % también de día aceptaba destellos |
 
 ---
 
-## 16. Tiempos de procesamiento
+## 17. Tiempos de procesamiento
 
 | Proceso | Tiempo | Memoria |
 |---|---|---|
@@ -959,7 +1031,7 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 
 ---
 
-## 17. Resultados finales
+## 18. Resultados finales
 
 | Caso | Método | Resultado | Referencia |
 |---|---|---|---|
@@ -974,7 +1046,8 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 | Arrow sin trazadores | STIV, 9 variantes | 0 de 49 | No medible, explicado |
 | Canal de riego | STIV + top-hat | 6 de 15 estaciones, 0.0590 alturas/s | r 0.984 con PTV |
 | Cámaras de Tokio en directo | STIV en tiempo real | 0.45 m/s (Myoshoji, de día) | Escala supuesta, sin referencia |
-| Myoshoji tras los ajustes del 13 oct | STIV + escalas lentas + motas | Día: 9 de 9, ~0.48 m/s; noche: 5–6 de 9, ~0.06 m/s | Ancho medido (8.8 m), largo supuesto |
+| Myoshoji tras los ajustes del 13 oct | STIV + escalas lentas + motas | Día: 9 de 9, ~0.48 m/s; noche: ~0.06 m/s **falso** (destellos) | Ancho medido (8.8 m), largo supuesto |
+| Myoshoji, 3 h con el nivel (14 oct) | STIV en directo | Día 0.46–0.50 m/s; noche sin medida válida | Caudal oficial (Ochiai, 2005–2009): ~0.4–0.6 m/s en superficie |
 | Kurome tras corregir los duplicados | STIV | 5–6 de 9, ~0.85 m/s (antes ~0.94) | Correlación independiente: 0.72–1.0 m/s (estaciones 5–8) |
 | Shimoda | STIV + filtro direccional | 9 de 9, ~1.0–1.1 m/s (río crecido) | Escala supuesta; invariante al muestreo |
 | Akigawa | STIV, varias variantes | 0 de 9 | No medible con este video, explicado |
@@ -986,7 +1059,7 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
 
 ---
 
-## 18. Reglas de trabajo que salieron del proceso
+## 19. Reglas de trabajo que salieron del proceso
 
 1. **La referencia se abre una sola vez, al final.** Nada se ajusta después (de ahí que se eliminaran
    el barrido de `v_corr` y los detectores automáticos sobreajustados).
@@ -1013,3 +1086,7 @@ LSPIV necesita 16 veces más memoria porque guarda todo el video proyectado.
     comprueba con una regresión sobre grabaciones (`validacion/regresion.py`).
 13. **La luz del sol decide más que el algoritmo:** de cara satura el agua (sin datos) y con destellos
     da errores con buena coherencia. La orientación de la cámara es parte del diseño.
+14. **Que varios métodos coincidan no prueba que midan el agua:** de noche, el STIV, el seguimiento de
+    motas y la correlación de conjunto daban todos ~0.05 m/s porque medían los mismos destellos fijos.
+    Hace falta un dato externo (aforo, caudal oficial) o, al menos, preguntarse si el número es razonable
+    para ese río. Fue esa pregunta la que destapó el error.

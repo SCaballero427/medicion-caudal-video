@@ -1,0 +1,4 @@
+atardecer_1720: 900 fotogramas reales, 58873 motas detectadas, 19 pistas rectas de >= 3 s
+  banda 0-2:    3 pistas, v a lo largo mediana +0.043 m/s [q25 +0.042, q75 +0.043], de traves -0.010
+  banda 3-5:    1 pistas, v a lo largo mediana +0.046 m/s [q25 +0.046, q75 +0.046], de traves -0.029
+  banda 6-8:   15 pistas, v a lo largo mediana +0.054 m/s [q25 +0.046, q75 +0.059], de traves -0.009

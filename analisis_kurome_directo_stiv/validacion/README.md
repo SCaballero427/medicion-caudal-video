@@ -109,6 +109,7 @@ el programa anterior:
 | Myoshoji 200 s (`myoshoji_largo`) | dia | 1643 de 1872, 0.482 | 1643 de 1872, 0.482 | identico |
 | Myoshoji clip 20 s (`myoshoji_dia20`) | dia | 60 de 90, 0.492 | 60 de 90, 0.492 | identico |
 | **Myoshoji de noche** (`myoshoji_noche`) | noche | **220** de 720, 0.054 | **318** de 720, 0.057 | estaciones 1, 2 y 8 nuevas, a 0.02-0.07 como sus vecinas |
+| Myoshoji de noche, desde el 2026-10-14 | noche | | **0** de 720 | `medir_noche` = False: esos 0.05 m/s eran destellos de farola, no la corriente (`../verificacion_nivel/`) |
 | Shimoda (`shimoda`, `shimoda2`) | dia | 581 de 585, 1.055; 789 de 792, 1.002 | igual | identico |
 | Shimoda (`shimoda3`) | dia | - | 709 de 720, 1.070 | (sin corrida previa; de dia el codigo es el de antes) |
 | Akigawa (`akigawa`) | dia | 0 de 540 | 0 de 540 | sigue sin medir, como debe |

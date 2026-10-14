@@ -1,0 +1,4 @@
+noche_1800: 1800 fotogramas reales, 61.0 px/m
+  banda 0-2: recta f=U k -> U 0.01 m/s (54.3 % de la energia); ondas desplazadas -> U 0.00 m/s (5.9 %)
+  banda 3-5: recta f=U k -> U 0.06 m/s (50.5 % de la energia); ondas desplazadas -> U 0.00 m/s (7.6 %)
+  banda 6-8: recta f=U k -> U 0.05 m/s (63.5 % de la energia); ondas desplazadas -> U 0.00 m/s (3.2 %)

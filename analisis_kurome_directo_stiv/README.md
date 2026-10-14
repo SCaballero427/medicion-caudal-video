@@ -207,6 +207,14 @@ las coordenadas de la ficha pueden llevar ese desfase.
 
 ## Noche y agua lenta (2026-10-13)
 
+> **CORREGIDO el 2026-10-14 (ver `verificacion_nivel/README.md`).** Lo que sigue concluia que de noche
+> el agua del Myoshoji iba ~10 veces mas despacio. Es falso: con el mismo nivel de dia se miden
+> 0.46-0.50 m/s, y el caudal oficial del puente Ochiai da ~0.4-0.6 m/s en superficie. Las "motas" que
+> avanzan a ~0.05 m/s son destellos de farola sobre ondulaciones casi fijas de la superficie, no la
+> corriente; por eso el Myoshoji lleva ahora `"medir_noche": False`. Las escalas lentas y el modo
+> noche siguen en el programa (sirven para agua lenta de verdad y para otras camaras); lo que fallaba
+> era el trazador.
+
 De noche el programa no media nada en el Myoshoji, aunque se veia basura moverse. Medido sobre
 79 s grabados del directo:
 
@@ -338,7 +346,28 @@ codigo** (`validacion/correr.py` importa `stiv_directo.py`). Detalle en `validac
 - `validacion/regresion.py` pasa las grabaciones de los directos por el programa: es la forma de
   comprobar que un cambio del metodo no estropea las camaras que ya miden.
 
+## Verificacion con el nivel y el caudal oficial (2026-10-14): `verificacion_nivel/`
+
+Tres horas grabadas del Myoshoji (15:32-19:17 hora de Japon) cruzadas con el nivel de la estacion de
+la propia camara (上高田上) y con los aforos oficiales del puente Ochiai. El nivel no se movio (2 cm),
+asi que la comparacion con el nivel no dice nada en seco; lo que si salio:
+
+- **De dia el programa acierta, de noche no.** Dia 0.46-0.50 m/s; noche 0.04-0.07. Los aforos (Q 0.38
+  m3/s, 0.13 m de calado) dan ~0.4-0.6 m/s en superficie. De noche la camara sigue en color con las
+  farolas y lo unico visible son destellos sobre ondulaciones casi fijas.
+- **Cambios:** noche detectada tambien por brillo (`BRILLO_NOCHE` = 50) y `"medir_noche": False` para
+  el Myoshoji (`noche_no_valida`).
+- `verificacion_nivel/grabar_directo.py` necesita `deno.exe` y `yt-dlp-ejs` en el `.venv`: desde octubre
+  YouTube no da los formatos sin resolver un desafio en JavaScript. **El programa en directo todavia no
+  usa deno**, asi que en un PC sin el formato antiguo puede no abrir los directos de YouTube.
+
 ## Limites conocidos
+
+- **De noche, el Myoshoji no se mide** (`medir_noche` = False): con farolas no hay trazador visible de
+  la corriente. Para ALIAR, comprobar con la camara real que de noche se ve el agua fluir (iluminacion
+  infrarroja propia, sin destellos fijos) antes de fiarse de las medidas nocturnas.
+- De dia el Myoshoji emite a ~12 fps (duplicados alternos de 2 y 3), no a los 15 de `fps_camara`. Sin
+  revisar si sesga.
 
 - **De dia no hay defensa contra los destellos del sol**: medidas con buena coherencia y +33 %
   (Heiskanen, `validacion/`). La exclusion de reflejos (`BRILLO_REFLEJO`) es solo de noche, y la

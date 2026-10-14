@@ -17,3 +17,6 @@ desktop.ini
 # Grabaciones FFV1 de los directos para la regresion de stiv_directo (1-4 GB cada una, por encima del
 # limite de GitHub): se rehacen con validacion/grabar.py
 /analisis_kurome_directo_stiv/validacion/grabaciones/
+/analisis_kurome_directo_stiv/verificacion_nivel/grabaciones/
+# Cookies de YouTube (credenciales de sesion): nunca al repositorio
+cookies*.txt

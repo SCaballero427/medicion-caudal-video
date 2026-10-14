@@ -1328,7 +1328,24 @@ machine** — it has no `Scripts\` (copied from another computer, whose user was
   accumulate), the window is reused, and a source that fails to open falls back to the previous one.
   Without the file (the Pi) the list is `CAMARAS`. If the CSV is locked (Excel), it writes to a
   dated CSV instead of crashing.
-- **Night and slow water (2026-10-13).** At night Myoshoji measured nothing although debris was
+- **Level verification and the night was wrong (2026-10-14), `verificacion_nivel/`.** `grabar_directo.py`
+  records the stream untouched (HLS segments, ~0.8 GB/h, needs `deno.exe` + `yt-dlp-ejs` in `.venv`
+  since YouTube's JS challenge; the live program does not use deno yet); `analizar.py` measures
+  recordings with the program's code and joins the Tokyo level gauge **上高田上** (same site; level only,
+  10 min, daily CSV the next day). Three hours on 14 Oct: level flat (1.21-1.23 m), **day 0.46-0.50 m/s,
+  night 0.04-0.07 with the night process**. Official gaugings at Ochiai bridge (`referencia/`, Tokyo
+  water-quality CSVs 2005-2009: Q 0.38 m3/s, 0.13 m depth) give ~0.4-0.6 m/s at the surface, so **day is
+  right and night is wrong**: the camera stays in colour under street lamps and the only visible thing
+  is lamp glints on near-stationary surface undulations (stones in 13 cm of water), which every method
+  (specks, PTV, ensemble correlation) measures consistently at ~0.05. A first conclusion (night right,
+  day = waves) was reached from wall bubbles and overturned by the gauging -- the k-omega spectrum of the
+  day STI is a straight line f = 0.42 k (advection; non-dispersive waves at 0.42 m/s would need ~2 cm
+  depth). Fixes: night also detected by brightness (`BRILLO_NOCHE` = 50, `es_noche()`; day 66-126, night
+  in colour 37-45, IR 14) and per-camera `medir_noche` (False for Myoshoji: measured and drawn, no
+  station accepted, motive `noche_no_valida`). Open: by day this camera streams ~12 fps (alternating 2/3
+  duplicates), not the 15 assumed.
+- **Night and slow water (2026-10-13). The velocity claim below was refuted on 10-14 (see above).**
+  At night Myoshoji measured nothing although debris was
   visibly moving: the water ran ~10x slower than at calibration (~0.05 m/s, **0.1 px per real
   frame**, confirmed by long-lag ensemble correlation with no STIV), so the 10 s frame-by-frame STI
   saw near-vertical streaks, frame-to-frame activity was 0 ("sin textura") and lamp-glare sparkles

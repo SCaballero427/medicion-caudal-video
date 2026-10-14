@@ -1,0 +1,20 @@
+myoshoji_20261014_1712JST.ts: 59.8 min, 0 huecos; hora: hora de descarga (aproximada)
+  myoshoji_20261014_1712JST.ts: 30.00 fps, DS 20.0 mm = 0.65 px/muestra (mediana), 450 muestras por linea, filas por escala [150, 225, 120]
+  modo noche (saturacion 11.3)
+  107714 fotogramas, 717 medidas en 591 s
+
+nivel: pagina (ultimas 4 h) (estacion 上高田上)
+hora JST  nivel(m)  v mediana (m/s)  [q25-q75]  medidas validas  modo
+  17:20   1.21     0.255  [0.151-0.344]   86/89   noche
+  17:30   1.21     0.231  [0.093-0.336]   118/118   noche
+  17:40   1.21     0.073  [0.069-0.264]   116/120   noche
+  17:50   1.21     0.072  [0.067-0.077]   86/120   noche
+  18:00   1.22     0.071  [0.061-0.075]   75/118   noche
+  18:10   1.22     0.068  [0.063-0.074]   86/120   noche
+  18:20   1.22     0.077  [0.075-0.079]   12/32   noche
+
+nivel: rango 1 cm; velocidad: 0.068-0.255 m/s; correlacion -0.55
+  el nivel apenas se mueve: la correlacion no significa nada (hace falta lluvia)
+  modo noche: 579 medidas, mediana 0.076 m/s
+
+C:\Users\sergi\Desktop\test_pyorc-20261009T172625Z-1-001\test_pyorc\analisis_kurome_directo_stiv\verificacion_nivel\salidas\myoshoji_20261014_1712JST_noche_10min.csv, _grafica.png (y un _medidas.csv por grabacion)

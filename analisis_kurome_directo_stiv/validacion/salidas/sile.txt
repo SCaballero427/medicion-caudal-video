@@ -1,6 +1,6 @@
   SMC_D_RC_022_08172020_AC.mp4: 30.01 fps, DS 31.7 mm = 17.74 px/muestra (mediana), 158 muestras por linea, filas por escala [300, 225, 120]
   modo dia (saturacion 25.5)
-  671 fotogramas, 12 medidas en 158 s
+  671 fotogramas, 12 medidas en 104 s
 y de las estaciones: [0.1524 0.3048 0.4572 0.6096 0.762  0.9144 1.0668 1.2192 1.3716 1.524
  1.6764]
   vertical 1: 0.697 m/s [0.68-0.72] coh 0.64, 12/12

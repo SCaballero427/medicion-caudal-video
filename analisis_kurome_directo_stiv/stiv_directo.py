@@ -106,6 +106,14 @@ CAMARAS = {
         # pasan las burbujas junto al muro derecho
         "v_esperada": 0.30, "largo_linea_m": 9.0, "centro_linea": 0.50, "ancho_banda_m": 0.60,
         "fps_camara": 15.0, "filtro_direccional": False,
+        # De noche esta camara no ve el agua que fluye (verificacion_nivel/, 2026-10-14): sigue en
+        # color con las farolas y lo unico visible en el agua son destellos de las farolas sobre
+        # ondulaciones casi fijas (las piedras del fondo), que avanzan a 0.04-0.07 m/s. El modo noche,
+        # el seguimiento de motas y la correlacion de conjunto los miden igual, y no son la corriente:
+        # con el mismo nivel, de dia se mide 0.46-0.50 m/s, y el caudal oficial del puente Ochiai
+        # (Q 0.38 m3/s, 0.13 m de calado, 2005-2009) da ~0.4-0.6 m/s en superficie. Se mide y se dibuja,
+        # pero ninguna estacion se acepta ("noche_no_valida").
+        "medir_noche": False,
     },
     "kurome": {
         "url": "https://www.youtube.com/watch?v=loW9744B-Co",
@@ -167,7 +175,7 @@ CAMARA_NUEVA = {
     "cuadrilatero": [[340, 620], [340, 260], [940, 260], [940, 620]],
     "largo_m": 10.0, "ancho_m": 6.0,
     "v_esperada": 0.50, "largo_linea_m": 6.0, "centro_linea": 0.50, "ancho_banda_m": 0.40,
-    "fps_camara": None, "filtro_direccional": False,
+    "fps_camara": None, "filtro_direccional": False, "medir_noche": True,
 }
 CAMARA_POR_DEFECTO = "myoshoji"
 ALTURA_MAX = 720            # mejor formato de estos directos; 1080 no existe en este canal
@@ -197,7 +205,8 @@ ACTIVIDAD_MIN = 0.5
 # la mascara POR PIXEL (los pixeles quietos no aportan al tensor); esta fraccion decide cuanto trazador
 # hace falta en el bloque. De dia se queda en 0.5. De noche baja a 0.1: el trazador son motas sueltas
 # sobre agua negra, y con 0.5 casi ningun bloque llegaba (Bradano, agua a 0.01-0.36/255 con particulas:
-# 1 de 7 verticales -> 5 de 7, sesgo -4.5 %; Myoshoji de noche 220 -> 318 medidas, misma mediana).
+# 1 de 7 verticales -> 5 de 7, sesgo -4.5 %; Myoshoji de noche 220 -> 318 medidas, misma mediana,
+# aunque esas resultaron ser destellos de farola: ver "medir_noche").
 # No se baja de dia porque ahi no hay exclusion de reflejos: en Heiskanen con el sol de cara (agua
 # saturada) 0.1 aceptaba 14 de 20 estaciones a +36 %, que con 0.5 se rechazan como "sin textura". Los
 # destellos no se separan por saturacion (las estaciones buenas del Myoshoji de dia estan saturadas en
@@ -218,8 +227,11 @@ COH_MIN = 0.40
 # (aliasing), y no se acepta. Las filas lentas son el PROMEDIO de los fotogramas que abarcan, que es
 # el antialias temporal. Medido de noche en el Myoshoji (79 s): la rapida da pendiente 0.2 (lento),
 # la de 0.133 s mide 0.05-0.07 m/s con la estela a ~35 grados y la de 0.5 s da lo mismo; un
-# artefacto no sobrevive a ese cambio de escala.
-ESCALAS = ((0.0, 10.0), (0.133, 30.0), (0.5, 60.0))
+# artefacto no sobrevive a ese cambio de escala. CORRECCION (2026-10-14): esa estela es real pero NO
+# es la corriente; son destellos de farola sobre ondulaciones casi fijas que avanzan despacio. El agua
+# va a ~0.4-0.5 m/s de dia con el mismo nivel y lo confirma el caudal oficial (ver "medir_noche").
+# Las escalas lentas siguen siendo utiles para agua lenta de verdad; lo que fallaba era el trazador.
+ESCALAS =((0.0, 10.0), (0.133, 30.0), (0.5, 60.0))
 P_MIN = 0.3
 P_MAX = 2.5
 VENTANA_S = ESCALAS[0][1]
@@ -240,6 +252,16 @@ BRILLO_REFLEJO = 60.0
 # auto: noche si la saturacion media del recuadro de medida (|B-G| + |G-R|) baja de esto. Medido:
 # 0.0 exacto con la camara en infrarrojo.
 SATURACION_NOCHE = 1.5
+# ... o si el brillo mediano a lo largo de las lineas baja de esto: el Myoshoji no pasa a infrarrojo,
+# sigue en color con las farolas (saturacion 8-10) y la saturacion sola tomaba la noche por dia
+# (2026-10-14). Medido: de dia 66-126 en todas las grabaciones, atardecer aun valido 59, noche en
+# color 37-45, infrarrojo 14.
+BRILLO_NOCHE = 50.0
+
+
+def es_noche(geom, frame):
+    return (geom.saturacion(frame) < SATURACION_NOCHE
+            or float(np.median(geom.brillo(frame))) < BRILLO_NOCHE)
 
 
 def elegir_camara(nombre, fuente=None, ajustes=None):
@@ -252,7 +274,7 @@ def elegir_camara(nombre, fuente=None, ajustes=None):
     """
     global CAMARA, URL_FUENTE, ETIQUETA, CUADRILATERO_SEMILLA, LARGO_SEMILLA_M, ANCHO_SEMILLA_M
     global V_ESPERADA, LARGO_LINEA_M, CENTRO_LINEA, ANCHO_BANDA_M, V_MAX_FISICA, FPS_CAMARA
-    global FILTRO_DIRECCIONAL
+    global FILTRO_DIRECCIONAL, MEDIR_NOCHE
     global CARPETA_SALIDAS, ARCHIVO_CONFIG, ARCHIVO_CSV, ARCHIVO_VISTA
     CARPETA_SALIDAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "salidas", nombre)
     ARCHIVO_CONFIG = os.path.join(CARPETA_SALIDAS, "config_stiv_directo.json")
@@ -268,7 +290,8 @@ def elegir_camara(nombre, fuente=None, ajustes=None):
         for clave, global_ in (("v_esperada", "V_ESPERADA"), ("largo_linea_m", "LARGO_LINEA_M"),
                                ("centro_linea", "CENTRO_LINEA"), ("ancho_banda_m", "ANCHO_BANDA_M"),
                                ("fps_camara", "FPS_CAMARA"),
-                               ("filtro_direccional", "FILTRO_DIRECCIONAL")):
+                               ("filtro_direccional", "FILTRO_DIRECCIONAL"),
+                               ("medir_noche", "MEDIR_NOCHE")):
             if global_ in par:
                 c[clave] = par[global_]
     for clave, valor in (ajustes or {}).items():
@@ -284,6 +307,7 @@ def elegir_camara(nombre, fuente=None, ajustes=None):
     CENTRO_LINEA, ANCHO_BANDA_M = c["centro_linea"], c["ancho_banda_m"]
     FPS_CAMARA = c["fps_camara"]
     FILTRO_DIRECCIONAL = bool(c.get("filtro_direccional"))
+    MEDIR_NOCHE = bool(c.get("medir_noche", True))
     V_MAX_FISICA = 3 * V_ESPERADA
 
 
@@ -378,7 +402,8 @@ def guardar_config(cfg):
         "V_ESPERADA", "N_ESTACIONES", "MARGEN_ORILLA", "LARGO_LINEA_M", "CENTRO_LINEA",
         "LINEAS_BANDA", "ANCHO_BANDA_M", "VENTANA_S", "PASO_MEDIDA_S", "LADO_BLOQUE", "FPS_CAMARA",
         "ACTIVIDAD_MIN", "FRACCION_ACTIVA", "FRACCION_ACTIVA_NOCHE", "N_BLOQUES_MIN", "COH_MIN", "V_MAX_FISICA", "ESCALAS", "P_MIN", "P_MAX",
-        "NUCLEO_TOPHAT", "BRILLO_REFLEJO", "SATURACION_NOCHE", "FILTRO_DIRECCIONAL")}
+        "NUCLEO_TOPHAT", "BRILLO_REFLEJO", "SATURACION_NOCHE", "BRILLO_NOCHE", "FILTRO_DIRECCIONAL",
+        "MEDIR_NOCHE")}
     with open(ARCHIVO_CONFIG, "w", encoding="utf-8") as f:
         json.dump(salida, f, indent=2, ensure_ascii=False)
 
@@ -651,6 +676,8 @@ def medir(buffers, geom, cobertura, modo="dia", brillo=None, buffers_motas=None)
         j, pend, coh, n_act, sti = elegida or primera or (0, np.nan, 0.0, 0, None)
         v = pend * geom.ds / geom.dt_filas[j] if np.isfinite(pend) else np.nan
         motivos = [] if elegida else [motivo]
+        if modo == "noche" and not MEDIR_NOCHE:
+            motivos.append("noche_no_valida")      # ver "medir_noche" en CAMARAS
         if cobertura[i] < 0.8:
             motivos.append("fuera_de_campo")
         if elegida and abs(v) > V_MAX_FISICA:
@@ -1261,7 +1288,7 @@ def ejecutar(args, fuentes, actual):
             # modo noche/dia
             if args.modo == "auto" and (modo is None or t - t_ult_modo >= 5.0):
                 t_ult_modo = t
-                visto = "noche" if geom.saturacion(frame) < SATURACION_NOCHE else "dia"
+                visto = "noche" if es_noche(geom, frame) else "dia"
                 if modo is None:
                     modo = visto
                     print(f"modo {modo} (saturacion {geom.saturacion(frame):.1f})")

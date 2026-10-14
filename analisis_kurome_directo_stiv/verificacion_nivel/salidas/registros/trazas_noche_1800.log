@@ -1,0 +1,4 @@
+noche_1800: 900 fotogramas reales, 68722 motas detectadas, 245 pistas rectas de >= 3 s
+  banda 0-2:    5 pistas, v a lo largo mediana +0.009 m/s [q25 +0.005, q75 +0.024], de traves -0.006
+  banda 3-5:  125 pistas, v a lo largo mediana +0.039 m/s [q25 +0.033, q75 +0.047], de traves -0.011
+  banda 6-8:  115 pistas, v a lo largo mediana +0.050 m/s [q25 +0.044, q75 +0.058], de traves -0.013

@@ -9,10 +9,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import stiv_directo as sd
 
 POR_CAMARA = ("N_ESTACIONES", "MARGEN_ORILLA", "LARGO_LINEA_M", "CENTRO_LINEA", "ANCHO_BANDA_M",
-              "V_ESPERADA", "FPS_CAMARA", "FILTRO_DIRECCIONAL")
+              "V_ESPERADA", "FPS_CAMARA", "FILTRO_DIRECCIONAL", "MEDIR_NOCHE")
 
 
 def correr(video, cuad, L, W, params, orientacion_auto=True, modo="auto", fin_s=None, verbose=True):
+    # una geometria propia no es ninguna camara de CAMARAS: no hereda el "medir_noche" de la ultima elegida
+    sd.MEDIR_NOCHE = True
     for k, v in params.items():
         if k not in POR_CAMARA:
             raise ValueError(f"{k} no es un parametro por camara")
@@ -22,9 +24,10 @@ def correr(video, cuad, L, W, params, orientacion_auto=True, modo="auto", fin_s=
                  fin_s, verbose)
 
 
-def correr_camara(video, camara, modo="auto", fin_s=None, verbose=True):
-    """Con los ajustes de una camara del programa (CAMARAS + su config_stiv_directo.json)."""
-    sd.elegir_camara(camara)
+def correr_camara(video, camara, modo="auto", fin_s=None, verbose=True, ajustes=None):
+    """Con los ajustes de una camara del programa (CAMARAS + su config_stiv_directo.json). `ajustes`
+    cambia valores por camara, como los "ajustes" de fuentes.json (p. ej. {"v_esperada": 1.0})."""
+    sd.elegir_camara(camara, ajustes=ajustes)
     return bucle(video, sd.cargar_config(), True, modo, fin_s, verbose)
 
 
@@ -39,6 +42,7 @@ def bucle(video, cfg, orientacion_auto, modo, fin_s, verbose):
               f"{geom.px_por_muestra:.2f} px/muestra (mediana), {len(geom.xs)} muestras por linea, "
               f"filas por escala {geom.n_filas}")
     n, t_ult, medidas, brillos, modo_act = 0, -1e9, [], [], None
+    candidato, repeticiones, t_ult_modo = None, 0, -1e9
     c0 = time.perf_counter()
     while True:
         ok, f = cap.read()
@@ -48,10 +52,25 @@ def bucle(video, cfg, orientacion_auto, modo, fin_s, verbose):
         if fin_s and t > fin_s:
             break
         if modo_act is None:
-            modo_act = modo if modo != "auto" else (
-                "noche" if geom.saturacion(f) < sd.SATURACION_NOCHE else "dia")
+            modo_act = modo if modo != "auto" else ("noche" if sd.es_noche(geom, f) else "dia")
+            t_ult_modo = t
             if verbose:
                 print(f"  modo {modo_act} (saturacion {geom.saturacion(f):.1f})")
+        elif modo == "auto" and t - t_ult_modo >= 5.0:
+            # como ejecutar(): una lectura cada 5 s y cambio tras tres seguidas iguales (al anochecer la
+            # camara pasa a infrarrojo); el STI se vacia porque mezclaria los dos procesos
+            t_ult_modo = t
+            visto = "noche" if sd.es_noche(geom, f) else "dia"
+            if visto != modo_act:
+                repeticiones = repeticiones + 1 if visto == candidato else 1
+                candidato = visto
+                if repeticiones >= 3:
+                    modo_act, repeticiones, brillos = visto, 0, []
+                    bufs.vaciar()
+                    if verbose:
+                        print(f"  t={t:.0f} s: cambio a modo {modo_act}")
+            else:
+                candidato, repeticiones = None, 0
         if modo_act == "noche" and n % max(1, int(round(fps))) == 0:
             brillos = (brillos + [geom.brillo(f)])[-30:]
         bufs.agregar(geom.procesar(f, modo_act), geom.procesar(f, "noche") if modo_act == "dia" else None)
@@ -63,6 +82,7 @@ def bucle(video, cfg, orientacion_auto, modo, fin_s, verbose):
             res = sd.medir(bs, geom, geom.cobertura(*f.shape[:2]), modo_act, br, bm)
             for r in res:
                 r.pop("sti", None)
+                r["modo"] = modo_act
             medidas.append((t, res))
             t_ult = t
         n += 1

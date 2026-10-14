@@ -1,27 +1,27 @@
 L 4.000 m, W 29.436 m, 20 estaciones cada 1.549 m; cuad [[2674, 472], [2733, 1283], [1465, 1312], [1457, 1062]]
   Oulanka_2023-05-20_08-03-04_RLC-810A.mp4: 24.95 fps, DS 40.1 mm = 3.84 px/muestra (mediana), 100 muestras por linea, filas por escala [250, 250, 125]
   modo dia (saturacion 56.1)
-  749 fotogramas, 20 medidas en 98 s
+  749 fotogramas, 20 medidas en 69 s
   08-03-04: 0.33/2 0.55/18 0.79/20 0.87/13 0.76/20 0.76/20 0.69/3 --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher/lento) --(coher)
   Oulanka_2023-05-20_09-03-04_RLC-810A.mp4: 24.95 fps, DS 40.1 mm = 3.84 px/muestra (mediana), 100 muestras por linea, filas por escala [250, 250, 125]
   modo dia (saturacion 51.6)
-  749 fotogramas, 20 medidas en 60 s
+  749 fotogramas, 20 medidas en 44 s
   09-03-04: 0.45/7 0.56/2 0.72/11 0.82/20 0.95/13 1.13/12 0.88/4 0.79/2 --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher)
   Oulanka_2023-05-20_10-03-04_RLC-810A.mp4: 24.95 fps, DS 40.1 mm = 3.84 px/muestra (mediana), 100 muestras por linea, filas por escala [250, 250, 125]
   modo dia (saturacion 32.6)
-  749 fotogramas, 20 medidas en 57 s
+  749 fotogramas, 20 medidas en 34 s
   10-03-04: 0.37/2 0.50/18 0.48/7 --(sin_t) --(sin_t) --(sin_t) --(sin_t) --(coher/sin_t) --(coher/sin_t) --(sin_t) --(sin_t) --(sin_t) --(sin_t) --(coher/sin_t) --(coher/sin_t) --(sin_t) --(sin_t) --(coher/sin_t) --(coher) --(coher)
   Oulanka_2023-05-20_11-03-04_RLC-810A.mp4: 24.90 fps, DS 40.2 mm = 3.85 px/muestra (mediana), 100 muestras por linea, filas por escala [249, 249, 125]
   modo dia (saturacion 11.7)
-  748 fotogramas, 20 medidas en 44 s
+  748 fotogramas, 20 medidas en 26 s
   11-03-04: --(coher/sin_t) 0.45/4 --(sin_t) --(sin_t) --(sin_t) --(sin_t) --(sin_t) --(coher/sin_t) --(coher) --(coher/sin_t) --(sin_t) --(sin_t/coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher)
   Oulanka_2023-05-20_12-01-04_RLC-810A.mp4: 24.95 fps, DS 40.1 mm = 3.84 px/muestra (mediana), 100 muestras por linea, filas por escala [250, 250, 125]
   modo dia (saturacion 16.9)
-  749 fotogramas, 20 medidas en 43 s
+  749 fotogramas, 20 medidas en 27 s
   12-01-04: --(lento) --(sin_t) --(sin_t) --(sin_t) --(sin_t) --(sin_t) --(coher) 0.93/8 --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher) --(coher/lento)
   Oulanka_2023-05-20_13-03-04_RLC-810A.mp4: 24.94 fps, DS 40.1 mm = 3.84 px/muestra (mediana), 100 muestras por linea, filas por escala [249, 249, 125]
   modo dia (saturacion 42.4)
-  749 fotogramas, 21 medidas en 38 s
+  749 fotogramas, 21 medidas en 28 s
   13-03-04: --(lento/coher) 0.73/21 0.85/21 1.09/21 1.14/21 1.19/15 1.03/20 1.09/19 1.61/3 1.52/6 1.40/8 1.38/7 1.36/7 1.44/8 1.32/8 1.39/2 --(coher) --(coher) --(coher) --(coher)
 
 est track  ADCP  autores(6h) | 08-03-04 09-03-04 10-03-04 11-03-04 12-01-04 13-03-04
