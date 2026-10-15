@@ -3,6 +3,7 @@
 #   docker compose -f pruebas_docker/docker-compose.yml down
 #
 #   stiv-pi-falsa   Raspberry Pi falsa (Debian 13 arm64 + systemd + SSH) en localhost:2222
+#   stiv-pi-os      Raspberry Pi OS oficial en QEMU, en localhost:2223 (perfil pi-os: --profile pi-os)
 #   stiv-rtsp-srv   servidor RTSP (mediamtx): rtsp://localhost:8554/camara desde el PC,
 #                   rtsp://stiv-rtsp-srv:8554/camara desde la Pi falsa
 #   stiv-rtsp-pub   emite raspberry/prueba/myoshoji_20s.mp4 en bucle a ese servidor, como si fuera
@@ -32,6 +33,27 @@ services:
     ports:
       - "2222:22"
 
+  # Raspberry Pi OS de verdad (imagen oficial trixie arm64) en una maquina virtual QEMU, en
+  # localhost:2223. Va en un perfil para que "up" a secas siga levantando solo la Pi falsa; la usa
+  # probar_en_docker.ps1 -PiOS. Ver pi_os/Dockerfile y LEEME.md.
+  pi-os:
+    build: ./pi_os
+    image: stiv-pi-os
+    container_name: stiv-pi-os
+    profiles: ["pi-os"]
+    # QEMU es un programa normal de x86 que emula el ARM entero: no necesita privilegios
+    environment:
+      CPUS: "4"
+      MEMORIA: "4G"
+      TAMANO_SD: "32G"
+    volumes:
+      - pi-os-sd:/datos                 # la "tarjeta SD": se conserva al parar
+      - ./.llave:/llave:ro              # llave de prueba, la mete cloud-init en el primer arranque
+    ports:
+      - "2223:22"
+    # al parar se pulsa el boton de apagado y systemd apaga ordenadamente; emulado tarda
+    stop_grace_period: 120s
+
   rtsp-srv:
     image: bluenviron/mediamtx:latest
     container_name: stiv-rtsp-srv
@@ -51,3 +73,7 @@ services:
     command: ["-hide_banner", "-loglevel", "error", "-re", "-stream_loop", "-1",
               "-i", "/clip/myoshoji_20s.mp4", "-c", "copy",
               "-f", "rtsp", "-rtsp_transport", "tcp", "rtsp://localhost:8554/camara"]
+
+volumes:
+  pi-os-sd:
+    name: stiv-pi-os-sd

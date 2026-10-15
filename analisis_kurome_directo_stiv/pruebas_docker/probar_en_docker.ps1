@@ -7,12 +7,18 @@ scripts que se usaran con la Pi real. Necesita Docker Desktop abierto.
     .\pruebas_docker\probar_en_docker.ps1 -SoloLevantar   # levanta los contenedores y no toca nada mas
     .\pruebas_docker\probar_en_docker.ps1 -Parar          # DESACTIVA los contenedores, sin borrar nada
     .\pruebas_docker\probar_en_docker.ps1 -Arrancar       # los vuelve a activar tal como quedaron
-    .\pruebas_docker\probar_en_docker.ps1 -Bajar          # los BORRA (la Pi falsa pierde lo instalado)
-    .\pruebas_docker\probar_en_docker.ps1 -Bajar -BorrarImagenes   # ademas borra las imagenes (~1 GB)
+    .\pruebas_docker\probar_en_docker.ps1 -Bajar          # los BORRA (las dos Pi pierden lo instalado)
+    .\pruebas_docker\probar_en_docker.ps1 -Bajar -BorrarImagenes   # ademas borra las imagenes (~2 GB)
+
+Con -PiOS, lo mismo pero sobre Raspberry Pi OS oficial arrancado en QEMU (stiv-pi-os, puerto 2223)
+en vez del Debian con systemd (stiv-pi-falsa, puerto 2222). Mas fiel y mas lento:
+    .\pruebas_docker\probar_en_docker.ps1 -PiOS
+    .\pruebas_docker\probar_en_docker.ps1 -PiOS -SinInstalar
 
 Usa una llave SSH propia en pruebas_docker\.llave\ : no toca la carpeta .ssh del usuario.
 #>
 param(
+    [switch]$PiOS,
     [switch]$SinInstalar,
     [switch]$SoloLevantar,
     [switch]$Parar,
@@ -29,7 +35,13 @@ $PSDefaultParameterValues = @{ "*:ErrorAction" = "Stop" }
 $aqui = $PSScriptRoot
 $caso = Split-Path $aqui -Parent
 $compose = Join-Path $aqui "docker-compose.yml"
-$pi = "stiv-pi-falsa"
+# -Parar/-Arrancar/-Bajar actuan sobre todo, tambien la Pi OS (que va en un perfil aparte)
+$todo = @('-f', $compose, '--profile', 'pi-os')
+if ($PiOS) {
+    $pi = "stiv-pi-os"; $puerto = 2223; $servicios = @('pi-os', 'rtsp-srv', 'rtsp-pub')
+} else {
+    $pi = "stiv-pi-falsa"; $puerto = 2222; $servicios = @('pi-falsa', 'rtsp-srv', 'rtsp-pub')
+}
 
 function Paso($texto) { Write-Host "`n== $texto" -ForegroundColor Cyan }
 function Comprobar($que) { if ($LASTEXITCODE -ne 0) { throw "fallo: $que (codigo $LASTEXITCODE)" } }
@@ -39,40 +51,27 @@ if ($LASTEXITCODE -ne 0) { throw "Docker no responde: abre Docker Desktop, esper
 
 if ($Parar) {
     Paso "Desactivando los contenedores (no se borra nada; volver con -Arrancar)"
-    & docker.exe compose -f $compose stop
+    & docker.exe compose @todo stop
     Comprobar "docker compose stop"
     return
 }
 if ($Arrancar) {
     Paso "Reactivando los contenedores tal como quedaron"
-    & docker.exe compose -f $compose start
+    & docker.exe compose @todo start
     Comprobar "docker compose start"
-    Write-Host "La Pi falsa conserva lo instalado; si el servicio estaba activado, arranca solo."
+    Write-Host "Las Pi conservan lo instalado; si el servicio estaba activado, arranca solo."
     return
 }
 if ($Bajar) {
-    Paso "Parando y borrando los contenedores de prueba"
-    if ($BorrarImagenes) { & docker.exe compose -f $compose down --rmi all } else { & docker.exe compose -f $compose down }
+    Paso "Parando y borrando los contenedores de prueba (y la 'tarjeta SD' de la Pi OS)"
+    if ($BorrarImagenes) { & docker.exe compose @todo down -v --rmi all } else { & docker.exe compose @todo down -v }
     Comprobar "docker compose down"
     return
 }
 
-# -- 1. contenedores -------------------------------------------------------------------------------
-Paso "Levantando la Pi falsa y la camara RTSP simulada (la primera vez construye la imagen: minutos)"
-& docker.exe compose -f $compose up -d --build
-Comprobar "docker compose up"
-
-Paso "Esperando a que arranque systemd en la Pi falsa"
-$estado = ""
-for ($i = 0; $i -lt 60; $i++) {
-    $estado = (& docker.exe exec $pi systemctl is-system-running 2>$null) -join ""
-    if ($estado -in @("running", "degraded")) { break }
-    Start-Sleep 3
-}
-Write-Host "systemd: $estado   (degraded es normal en un contenedor)"
-if ($estado -notin @("running", "degraded")) { throw "la Pi falsa no termino de arrancar" }
-
-# -- 2. llave SSH de prueba ------------------------------------------------------------------------
+# -- 1. llave SSH de prueba ------------------------------------------------------------------------
+# Antes de levantar nada: la Pi OS la recibe por cloud-init en su primer arranque, como cuando se le
+# pone una llave en Raspberry Pi Imager.
 $dirLlave = Join-Path $aqui ".llave"
 $llave = Join-Path $dirLlave "llave_prueba"
 $conocidos = Join-Path $dirLlave "known_hosts"
@@ -81,40 +80,76 @@ if (-not (Test-Path $llave)) {
     & ssh-keygen.exe -t ed25519 -N '""' -f $llave -q -C "stiv-pruebas-docker"
     Comprobar "ssh-keygen"
 }
-& docker.exe cp "$llave.pub" "${pi}:/home/stiv/.ssh/authorized_keys"
-Comprobar "copiar la llave a la Pi falsa"
-& docker.exe exec $pi sh -c "chown stiv:stiv /home/stiv/.ssh/authorized_keys && chmod 600 /home/stiv/.ssh/authorized_keys"
 # si se reconstruyo el contenedor, su identidad SSH cambio: se olvida la anterior
 Remove-Item $conocidos -ErrorAction SilentlyContinue
 $op = @('-i', $llave, '-o', "UserKnownHostsFile=$conocidos", '-o', 'StrictHostKeyChecking=no', '-o', 'LogLevel=ERROR')
+
+# -- 2. contenedores -------------------------------------------------------------------------------
+if ($PiOS) {
+    Paso "Levantando Raspberry Pi OS en QEMU y la camara RTSP simulada (la primera vez construye la imagen y compila el kernel: ~30 min)"
+} else {
+    Paso "Levantando la Pi falsa y la camara RTSP simulada (la primera vez construye la imagen: minutos)"
+}
+& docker.exe compose @todo up -d --build @servicios
+Comprobar "docker compose up"
+
+if ($PiOS) {
+    # No hay "docker exec" dentro de una maquina virtual: se espera a poder entrar por SSH, que es
+    # lo mismo que se hace con la Pi real. El primer arranque emulado expande la tarjeta, corre
+    # cloud-init y genera las llaves del servidor SSH: varios minutos.
+    Paso "Esperando a que Raspberry Pi OS arranque y acepte SSH (primer arranque: 5-15 min; consola: docker logs -f $pi)"
+    $listo = $false
+    for ($i = 0; $i -lt 180; $i++) {
+        & ssh.exe -p $puerto @op -o BatchMode=yes -o ConnectTimeout=10 stiv@localhost "cloud-init status --wait > /dev/null; true" 2>$null
+        if ($LASTEXITCODE -eq 0) { $listo = $true; break }
+        if (-not (& docker.exe ps -q --filter "name=^$pi$")) { throw "el contenedor $pi se paro: docker logs $pi" }
+        Start-Sleep 5
+    }
+    if (-not $listo) { throw "Raspberry Pi OS no acepto SSH a tiempo: docker logs $pi" }
+    & ssh.exe -p $puerto @op stiv@localhost "echo; cat /etc/rpi-issue 2>/dev/null | head -1; uname -r; systemctl is-system-running; systemctl --failed --no-legend"
+} else {
+    Paso "Esperando a que arranque systemd en la Pi falsa"
+    $estado = ""
+    for ($i = 0; $i -lt 60; $i++) {
+        $estado = (& docker.exe exec $pi systemctl is-system-running 2>$null) -join ""
+        if ($estado -in @("running", "degraded")) { break }
+        Start-Sleep 3
+    }
+    Write-Host "systemd: $estado   (degraded es normal en un contenedor)"
+    if ($estado -notin @("running", "degraded")) { throw "la Pi falsa no termino de arrancar" }
+
+    & docker.exe cp "$llave.pub" "${pi}:/home/stiv/.ssh/authorized_keys"
+    Comprobar "copiar la llave a la Pi falsa"
+    & docker.exe exec $pi sh -c "chown stiv:stiv /home/stiv/.ssh/authorized_keys && chmod 600 /home/stiv/.ssh/authorized_keys"
+}
 
 if (-not $SoloLevantar) {
     # -- 3. instalar con el mismo script que se usara con la Pi real ------------------------------
     $subir = Join-Path $caso "raspberry\subir_a_raspberry.ps1"
     if ($SinInstalar) {
-        & $subir -Equipo localhost -Puerto 2222 -OpcionesSsh $op -SinInstalar
+        & $subir -Equipo localhost -Puerto $puerto -OpcionesSsh $op -SinInstalar
     } else {
-        Paso "Instalando el paquete en la Pi falsa (emulado: ~8 min la primera vez)"
-        & $subir -Equipo localhost -Puerto 2222 -OpcionesSsh $op
+        Paso "Instalando el paquete en $pi (emulado: ~8 min la primera vez en la Pi falsa, mas en la Pi OS)"
+        & $subir -Equipo localhost -Puerto $puerto -OpcionesSsh $op
     }
 
     # -- 4. prueba ---------------------------------------------------------------------------------
-    Paso "Ejecutando ./raspberry/stiv.sh prueba en la Pi falsa"
-    & ssh.exe -p 2222 @op stiv@localhost "cd ~/stiv && ./raspberry/stiv.sh prueba"
+    Paso "Ejecutando ./raspberry/stiv.sh prueba en $pi"
+    & ssh.exe -p $puerto @op stiv@localhost "cd ~/stiv && ./raspberry/stiv.sh prueba"
     Comprobar "stiv.sh prueba"
 }
 
 Paso "Listo"
 Write-Host @"
-Entrar en la Pi falsa (como si fuera la real):
-  ssh -p 2222 -i "$llave" -o UserKnownHostsFile="$conocidos" -o StrictHostKeyChecking=no stiv@localhost
+Entrar en $pi (como si fuera la real):
+  ssh -p $puerto -i "$llave" -o UserKnownHostsFile="$conocidos" -o StrictHostKeyChecking=no stiv@localhost
   y alli:  cd ~/stiv  y  ./raspberry/stiv.sh ayuda
 
 Camara RTSP simulada (el video de prueba en bucle):
   desde el PC:          rtsp://localhost:8554/camara
-  desde la Pi falsa:    rtsp://stiv-rtsp-srv:8554/camara
+  desde la Pi:          rtsp://stiv-rtsp-srv:8554/camara
   simular un corte:     docker stop stiv-rtsp-pub    (reanudar: docker start stiv-rtsp-pub)
 
-Recuerda: la Pi falsa es emulada; sus tiempos NO dicen nada de una Raspberry real.
+Recuerda: las dos Pi son emuladas; sus tiempos NO dicen nada de una Raspberry real.
 Al terminar:  probar_en_docker.bat -Parar     (desactiva sin borrar; -Arrancar para volver)
 "@

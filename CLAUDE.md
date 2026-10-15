@@ -1395,8 +1395,18 @@ case-insensitive); `cv2.destroyAllWindows()` raising in headless OpenCV; after a
 stream's PTS restart at 0 and `t_ult_medida` was not reset, so nothing was measured until the new t
 passed the old one — now every discontinuity (reconnection, backwards PTS, >1 s jump) clears the STI
 and **re-anchors** the clock so t keeps growing; and the 600-frame queue peaking at 1.3 GB RAM.
-**Not tested**: real Pi 4 speed (emulation says nothing), `journalctl`/`vcgencmd`, mDNS, `sudo`
-password over `ssh -t`, `-ConfigurarLlave`, a real Hikvision.
+**Not tested**: mDNS, `sudo` password over `ssh -t`, `-ConfigurarLlave`, a real Hikvision.
+
+**Real Pi 4 speed was measured on 2026-10-15** on a rented Mythic Beasts Pi 4B 4 GB (Raspberry Pi
+OS bookworm 64-bit — the host offers no trixie —, NFS root, user `stiv` created by hand), installed
+with the unmodified `subir_a_raspberry.ps1` in 236 s. **It runs ~1.8x faster than real time**:
+`stiv.sh prueba` x10 back to back: 20 s of video in 10.8–11.4 s, 16.0–17.2 ms/frame read+sample
+(budget 33), 714–922 ms per measurement; 1500 MHz throughout, peak 53.0 °C, `throttled=0x0`; same
+0.49 m/s, 6/9 as the PC. Live Myoshoji stream from the datacenter (YouTube did *not* block it):
+60 s in real time, 18.6 ms/frame, **1084 ms per measurement at the default 1 s step** — slightly
+over budget, which is why `stiv.conf` uses `--paso-medida 5` — stations 3–6 at 0.47–0.52 m/s,
+in line with the verified 0.483 m/s day median. `vcgencmd` works there as user `stiv` (group
+`video`).
 
 That test bench is kept, reproducible, in **`pruebas_docker/`** (deliberately *outside* `raspberry/`,
 whose contents all ship to the Pi): `pi_falsa/Dockerfile` (Debian 13 arm64, systemd, dbus, sshd,
@@ -1406,6 +1416,28 @@ user `stiv` with passwordless sudo), `docker-compose.yml` (`stiv-pi-falsa` on `l
 the user's `~/.ssh`), runs the real `subir_a_raspberry.ps1` against it and then `stiv.sh prueba`;
 `-Parar`/`-Arrancar` stop and restart the containers keeping everything (the user asked that sessions end with **stop, never delete**); `-Bajar [-BorrarImagenes]` deletes them. Container names are prefixed `stiv-` because this Docker
 also holds ~10 unrelated containers of the user's.
+
+**`-PiOS` (added 2026-10-15) swaps the Debian container for the real thing**: `pi_os/` boots the
+official, unmodified Raspberry Pi OS Lite trixie image (`2026-10-06`, sha256-checked) in a
+full-system `qemu-system-aarch64` VM (`virt`, cortex-a72, 4 cores, 4 GB) inside a non-privileged
+container, `stiv-pi-os` on `localhost:2223`, behind compose profile `pi-os` so plain `up` is
+unchanged. The approach is dokmic's (`docker-rpi`) minus 9P: disk is a virtio raw image in volume
+`stiv-pi-os-sd`, booted with the image's own `initramfs8` and `cmdline.txt` (so the image expands
+the partition to 32 GB and removes `resize` itself). **Only the kernel is not from the image**: the
+stock one has no virtio/PCI-generic drivers at all, so it is rebuilt from `raspberrypi/linux` tag
+`stable_20260911` with the image's own `/boot/config`, the same gcc 14.2.0-19 and
+`KERNELRELEASE=6.18.50+rpt-rpi-v8`, plus those drivers built in — and the image's stock modules load
+unchanged (checked). User/SSH come from a cloud-init `user-data` written into the FAT partition with
+mtools (Raspberry Pi's documented format, `enable_ssh: true`, NOPASSWD sudo; whether Imager itself
+writes NOPASSWD is unverified). Build ~30 min the first time (8 min of it the kernel), first boot
+~5 min, later boots ~75 s to SSH. `docker stop` presses the VM's power button via QMP: clean
+`reboot: Power down` in ~8 s, exit 0. Verified end to end: install from scratch, `stiv.sh prueba`
+(0.49 m/s, 6/9 — same as PC), service enabled → stop/start → autostarts, `journalctl` works (it does
+not in `pi-falsa`), RTSP from inside the VM via slirp DNS including a 10 s outage. It surfaced one
+real bug, fixed: `vcgencmd` present but failing prints its error **to stdout**, so `stiv.sh` printed
+`temperatura antes: Can't open device file: /dev/vcio_gencmd`; `temperatura()`/`salud` now accept
+its output only if it starts with `temp=`/`throttled=`. Still emulated: no speed, no VideoCore, no
+thermal zone, no mDNS.
 
 ## Picking the next dataset
 

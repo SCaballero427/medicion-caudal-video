@@ -37,8 +37,12 @@ parar_si_activo() {
     fi
 }
 
+# vcgencmd puede existir y no funcionar (sin acceso a /dev/vcio_gencmd, o sin VideoCore, como en la
+# Pi OS emulada de pruebas_docker): entonces escribe su error por la salida normal. Por eso solo se
+# acepta su respuesta si empieza como debe.
 temperatura() {
-    if command -v vcgencmd > /dev/null; then vcgencmd measure_temp | cut -d= -f2
+    local t
+    if t="$(vcgencmd measure_temp 2> /dev/null)" && [ "${t#temp=}" != "$t" ]; then echo "${t#temp=}"
     elif [ -r /sys/class/thermal/thermal_zone0/temp ]; then
         awk '{printf "%.1f'"'"'C\n", $1/1000}' /sys/class/thermal/thermal_zone0/temp
     else echo "?"; fi
@@ -98,9 +102,10 @@ EOF
         ;;
     salud)
         echo "temperatura: $(temperatura)   (por encima de ~80 C la Pi se frena sola)"
-        if command -v vcgencmd > /dev/null; then
-            t="$(vcgencmd get_throttled | cut -d= -f2)"
-            echo "get_throttled: $t   (0x0 = nunca se ha frenado; otro valor = calor o fuente insuficiente)"
+        if t="$(vcgencmd get_throttled 2> /dev/null)" && [ "${t#throttled=}" != "$t" ]; then
+            echo "get_throttled: ${t#throttled=}   (0x0 = nunca se ha frenado; otro valor = calor o fuente insuficiente)"
+        else
+            echo "get_throttled: no disponible (vcgencmd no responde)"
         fi
         echo; df -h "$RAIZ" | sed 1d | awk '{print "disco: " $4 " libres de " $2 " (" $5 " usado)"}'
         free -h | awk '/Mem:/ {print "memoria: " $7 " disponibles de " $2}'
