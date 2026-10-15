@@ -1,0 +1,33 @@
+  SMC_D_RC_022_08172020_AC.mp4: 30.01 fps, DS 31.7 mm = 17.74 px/muestra (mediana), 158 muestras por linea, filas por escala [300, 225, 120]
+  modo dia (saturacion 25.5)
+  671 fotogramas, 12 medidas en 44 s
+  -> captura sile.jpg (medida 7 de 12, t = 16 s)
+y de las estaciones: [0.1524 0.3048 0.4572 0.6096 0.762  0.9144 1.0668 1.2192 1.3716 1.524
+ 1.6764]
+  vertical 1: 0.697 m/s [0.68-0.72] coh 0.64, 12/12
+  vertical 2: 0.804 m/s [0.80-0.82] coh 0.91, 11/12
+  vertical 3: 0.873 m/s [0.86-0.88] coh 0.93, 12/12
+  vertical 4: 0.915 m/s [0.91-0.92] coh 0.95, 12/12
+  vertical 5: 0.972 m/s [0.97-0.97] coh 0.95, 12/12
+  vertical 6: 0.992 m/s [0.99-1.00] coh 0.95, 12/12
+  vertical 7: 0.950 m/s [0.93-0.96] coh 0.95, 12/12
+  vertical 8: 0.940 m/s [0.92-0.95] coh 0.94, 12/12
+  vertical 9: 0.895 m/s [0.87-0.90] coh 0.91, 12/12
+  vertical 10: 0.825 m/s [0.82-0.83] coh 0.86, 12/12
+  vertical 11: 0.841 m/s [0.79-0.86] coh 0.59, 12/12
+
+vert  ADV(media)  directo*0.92  | superficial: caso STIV  directo
+  1    0.630      0.641        |              0.587(rech)  0.697
+  2    0.797      0.739        |              0.732  0.804
+  3    0.813      0.803        |              0.837  0.873
+  4    0.812      0.842        |              0.878  0.915
+  5    0.822      0.894        |              0.962  0.972
+  6    0.852      0.913        |              0.974  0.992
+  7    0.851      0.874        |              0.942  0.950
+  8    0.846      0.865        |              0.956  0.940
+  9    0.809      0.823        |              0.894  0.895
+ 10    0.815      0.759        |              0.849  0.825
+ 11    0.737      0.774        |              1.345(rech)  0.841
+11/11 verticales; ADV vs 0.92*directo: sesgo +1.6 %, RMSE 0.042; alfa implicito 0.908
+directo vs caso STIV (superficial, 9 verticales aceptadas en ambos): dif media +1.8 %
+Q (12 medidas): mediana 1.4537 m3/s, q05-q95 1.4339-1.4697; aforo 1.4362 -> +1.2 %  (caso STIV en video entero: 1.4493)
